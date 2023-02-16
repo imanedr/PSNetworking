@@ -28,6 +28,9 @@ The number of milliseconds to wait for a response to the ping request. The defau
 .PARAMETER Continuous
 A switch parameter that indicates whether to send an infinite number of pings.
 
+.PARAMETER Short
+A switch parameter that make the output shorter.
+
 .EXAMPLE
 PS C:\> Ping-Network -ComputerName "www.google.com"
 Pings the www.google.com server and returns the results of the ping.
@@ -52,7 +55,8 @@ Use the Ping-Network function to test the connectivity of a network and diagnose
         [switch]$DontFragment,
         [int]$Ttl = 128,
         [int]$Timeout = 5000,
-        [switch]$Continuous
+        [switch]$Continuous,
+        [switch]$Short
     )
     $pingStatistics = @{
         Sent     = 0
@@ -82,7 +86,14 @@ Use the Ping-Network function to test the connectivity of a network and diagnose
                 $pingStatistics.Minimum = [Math]::Min($pingStatistics.Minimum, $pingResult.RoundtripTime)
                 $pingStatistics.Maximum = [Math]::Max($pingStatistics.Maximum, $pingResult.RoundtripTime)
                 $pingStatistics.Average = ($pingStatistics.Average * ($pingStatistics.Received - 1) + $pingResult.RoundtripTime) / $pingStatistics.Received
-                Write-Output "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') Reply from $($pingResult.Address): seq=$($iCount + 1) bytes=$BufferSize time=$($pingResult.RoundtripTime)ms TTL=$($pingResult.Options.Ttl)"
+                if (-not $short)
+                {
+                    Write-Output "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') Reply from $($pingResult.Address): seq=$($iCount + 1) bytes=$BufferSize time=$($pingResult.RoundtripTime)ms TTL=$($pingResult.Options.Ttl)"
+                }
+                else
+                {
+                    Write-Output "Reply $($pingResult.Address): seq=$($iCount + 1) b=$BufferSize t=$($pingResult.RoundtripTime)ms TTL=$($pingResult.Options.Ttl)"
+                }
             }
             else
             {
