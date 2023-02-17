@@ -92,7 +92,7 @@ Use the Ping-Network function to test the connectivity of a network and diagnose
                 }
                 else
                 {
-                    Write-Output "Reply $($pingResult.Address): seq=$($iCount + 1) b=$BufferSize t=$($pingResult.RoundtripTime)ms TTL=$($pingResult.Options.Ttl)"
+                    Write-Output "Reply $($pingResult.Address): S=$($iCount + 1) B=$BufferSize T=$($pingResult.RoundtripTime)ms TTL=$($pingResult.Options.Ttl)"
                 }
             }
             else
