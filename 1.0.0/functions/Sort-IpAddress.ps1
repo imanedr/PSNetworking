@@ -19,6 +19,7 @@ This function outputs a sorted list of IP addresses in ascending order.
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
+        [ValueFromPipeline]
         [string[]]$IpAddressList
     )
 
