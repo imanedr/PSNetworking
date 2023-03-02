@@ -1,5 +1,6 @@
-function Sort-IpAddress {
-	<#
+function Sort-IpAddress
+{
+    <#
 .Synopsis
 This function takes an array of IP addresses and sorts them in ascending order based on their octets.
 
@@ -18,24 +19,27 @@ This function outputs a sorted list of IP addresses in ascending order.
 #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true)]
-        [ValueFromPipeline]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string[]]$IpAddressList
     )
-
-    $sortedIpAddresses = $IpAddressList | ForEach-Object {
-        [System.Net.IPAddress]::Parse($_) | Select-Object @{
-            Name='Octet1';Expression={$_.GetAddressBytes()[0]}
-        }, @{
-            Name='Octet2';Expression={$_.GetAddressBytes()[1]}
-        }, @{
-            Name='Octet3';Expression={$_.GetAddressBytes()[2]}
-        }, @{
-            Name='Octet4';Expression={$_.GetAddressBytes()[3]}
-        }, @{
-			Name='IPAddress';Expression={$_}
-		}
-    } | Sort-Object Octet1, Octet2, Octet3, Octet4 | Select-Object IPAddress
-
-    return $sortedIpAddresses
+    process
+    {
+        $sortedIpAddresses = $IpAddressList | ForEach-Object {
+            [System.Net.IPAddress]::Parse($_) | Select-Object @{
+                Name = 'Octet1'; Expression = { $_.GetAddressBytes()[0] }
+            }, @{
+                Name = 'Octet2'; Expression = { $_.GetAddressBytes()[1] }
+            }, @{
+                Name = 'Octet3'; Expression = { $_.GetAddressBytes()[2] }
+            }, @{
+                Name = 'Octet4'; Expression = { $_.GetAddressBytes()[3] }
+            }, @{
+                Name = 'IPAddress'; Expression = { $_ }
+            }
+        } | Sort-Object Octet1, Octet2, Octet3, Octet4 | Select-Object IPAddress
+    }
+    end
+    {
+        return ($sortedIpAddresses | ForEach-Object {$_.IPAddress.IPAddressToString})
+    }
 }
