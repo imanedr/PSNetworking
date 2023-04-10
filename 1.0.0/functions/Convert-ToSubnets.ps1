@@ -67,8 +67,8 @@ function Convert-ToSubnets
                 if ($broadCastIndex -gt ($sortedips.count - 1))
                 {
                     # If the broadcast address is outside the range of the IP addresses, use the current IP address as the subnet address
-                    $tempSubnet = $current_netID + "/$j"
-                    break
+                    $tempSubnet = $current_netID + "/$($j+1)"
+                    Break                   
                 }
                 else
                 {
