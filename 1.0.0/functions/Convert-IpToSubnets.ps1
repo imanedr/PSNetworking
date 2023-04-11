@@ -1,9 +1,10 @@
-function Convert-ToSubnets
+function Convert-IpToSubnets
 {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)] # The list of IP addresses is required
-        [string[]]$IPAddressList
+        [string[]]$IPAddressList,
+        [switch]$NotUseCIDRfor32
     )
 
     # This array contains all possible subnet masks
@@ -42,9 +43,17 @@ function Convert-ToSubnets
         '255.255.255.255')
 
 
+    #removing Duplication
+    $hashSet = New-Object System.Collections.Generic.HashSet[string]
+    foreach ($item in $IPAddressList) {
+        [void]$hashSet.Add($item)
+    }
+    
     # Sort the IP addresses
-    $SortedIPs = Sort-IpAddress -IpAddressList $IPAddressList
-    $ipcount=$SortedIPs.count
+    $SortedIPs = Sort-IpAddress -IpAddressList $hashSet
+
+    
+    $ipcount = $SortedIPs.count
     $subnets = @()
     $current_netID = ''
     $next_netID = ''
@@ -53,7 +62,15 @@ function Convert-ToSubnets
     {
         # Get the network ID of the current IP address
         $current_netID = $SortedIPs[$i]
-        $tempSubnet = $SortedIPs[$i] + "/32"
+        if ($NotUseCIDRfor32)
+        {
+            $tempSubnet = $SortedIPs[$i] 
+        }
+        else
+        {
+            $tempSubnet = $SortedIPs[$i] + "/32"
+        }
+        
         $tempIndex = ""
         for ($j = 31; $j -gt 0; $j--)
         {
