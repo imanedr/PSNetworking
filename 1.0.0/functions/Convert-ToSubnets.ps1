@@ -44,12 +44,12 @@ function Convert-ToSubnets
 
     # Sort the IP addresses
     $SortedIPs = Sort-IpAddress -IpAddressList $IPAddressList
-
+    $ipcount=$SortedIPs.count
     $subnets = @()
     $current_netID = ''
     $next_netID = ''
     $i = 0
-    While ($i -lt $SortedIPs.count)
+    While ($i -lt $ipcount)
     {
         # Get the network ID of the current IP address
         $current_netID = $SortedIPs[$i]
@@ -64,7 +64,7 @@ function Convert-ToSubnets
                 # If the current and next IP addresses have the same network ID, they are in the same subnet
                 # Calculate the broadcast address of the subnet
                 $broadCastIndex = (([math]::pow(2, (32 - $j))) - 1 + $i)
-                if ($broadCastIndex -gt ($sortedips.count - 1))
+                if ($broadCastIndex -gt ($ipcount - 1))
                 {
                     # If the broadcast address is outside the range of the IP addresses, use the current IP address as the subnet address
                     $tempSubnet = $current_netID + "/$($j+1)"
@@ -85,6 +85,7 @@ function Convert-ToSubnets
                 else
                 {
                     # Otherwise, use the broadcast address as the subnet address
+                    
                     break
                 }
             }
