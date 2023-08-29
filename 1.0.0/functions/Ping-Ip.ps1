@@ -1,11 +1,11 @@
-function Ping-Network
+function Ping-Ip
 {
     <#
     .SYNOPSIS
-The Ping-Network function pings a specified computer name or IP address to test the network connection and provides detailed information on the response status.
+The Ping-Ip function pings a specified computer name or IP address to test the network connection and provides detailed information on the response status.
 
 .DESCRIPTION
-The Ping-Network function allows you to test the connectivity of a network by pinging a specified computer name or IP address. The function returns detailed information about the response, including the number of sent and received packets, the time taken for each response, and the status of each response. 
+The Ping-Ip function allows you to test the connectivity of a network by pinging a specified computer name or IP address. The function returns detailed information about the response, including the number of sent and received packets, the time taken for each response, and the status of each response. 
 
 .PARAMETER ComputerName
 Mandatory parameter that takes the name or IP address of the computer you want to ping.
@@ -32,18 +32,18 @@ A switch parameter that indicates whether to send an infinite number of pings.
 A switch parameter that make the output shorter.
 
 .EXAMPLE
-PS C:\> Ping-Network -ComputerName "www.google.com"
+PS C:\> Ping-Ip -ComputerName "www.google.com"
 Pings the www.google.com server and returns the results of the ping.
 
 .EXAMPLE
-PS C:\> Ping-Network -ComputerName "www.google.com" -Continuous
+PS C:\> Ping-Ip -ComputerName "www.google.com" -Continuous
 Pings the www.google.com server continuously and returns the results of each ping.
 
 .OUTPUTS
-The Ping-Network function returns information about the network response to the ping request, including the date and time, the response status, and the response time.
+The Ping-Ip function returns information about the network response to the ping request, including the date and time, the response status, and the response time.
 
 .NOTES
-Use the Ping-Network function to test the connectivity of a network and diagnose any potential issues.```
+Use the Ping-Ip function to test the connectivity of a network and diagnose any potential issues.```
 
     #>
     [CmdletBinding()]
