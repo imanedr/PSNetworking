@@ -2,14 +2,16 @@ Function Get-PublicIP
 {
     $previousPublicIP = ''
     $firstRun = $True
+    $publicIpProviderURL= "http://ip-api.com/json/"
+    #$publicIpProviderURL= "http://checkip.dyndns.org"
     While ($True)
     {
         try
         {
             $ProgressPreference = 'SilentlyContinue'
-            $publicIP = (Invoke-WebRequest -UseBasicParsing -TimeoutSec 6 'http://checkip.dyndns.org').Content -match "\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
+            $publicIP = (Invoke-RestMethod -Uri $publicIpProviderURL ).query
             $ProgressPreference = 'Continue'   
-            $publicIP = $Matches[0]
+           
             if ($firstRun)
             {
                 $previousPublicIP = $publicIP
