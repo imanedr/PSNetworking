@@ -56,11 +56,9 @@ function Ping-IpList
                     }
                 }
                 Clear-Host
-                Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), Ping sequnce: $iCount"
-                Write-Host -ForegroundColor Green "IPAddress     ResponsTime  Result
----------     -----------  ------"
+                Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), Ping sequnce: $($iCount + 1)"
                 foreach($item in $pingHistory.Values){
-                    Write-Host "$($item.IPAddress)           $($item.ResponsTime)  $($item.Result)"
+                    Write-Host "$($item.IPAddress)    $($item.ResponsTime)     $($item.Result)"
                 }
       
                 
@@ -104,7 +102,7 @@ function Ping-IpList
                     }
                 }
                 Clear-Host
-                Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), Ping sequnce: $iCount"
+                Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), Ping sequnce: $($iCount + 1)"
                 Write-Output $results | Format-Table -RepeatHeader
       
                 
