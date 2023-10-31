@@ -11,7 +11,8 @@ function Ping-IpList
         [int]$Ttl = 128,
         [int]$Timeout = 5000,
         [switch]$Continuous,
-        [switch]$ShowHistory
+        [switch]$ShowHistory,
+        [int]$HistoryResetCount = 100
     )
    
 
@@ -38,7 +39,7 @@ function Ping-IpList
                         Result      = ""
                     }
     
-                    if ($pingHistory.item($ip).Result.length -eq 100 ){$pingHistory.item($ip).Result =""}
+                    if ($pingHistory.item($ip).Result.length -eq $HistoryResetCount ){$pingHistory.item($ip).Result =""}
                     if ($pingResult.Status -eq "Success")
                     {
                         $pingStatistics.IPAddress = $ip
@@ -50,7 +51,7 @@ function Ping-IpList
                     else
                     {
                         $pingStatistics.IPAddress = $ip
-                        $pingStatistics.ResponsTime = 9999
+                        $pingStatistics.ResponsTime = "-"
                         $pingStatistics.Result = $pingHistory.item($ip).Result + "."
                         $pingHistory.item($ip)= $pingStatistics
                     }
@@ -58,11 +59,17 @@ function Ping-IpList
                 Clear-Host
                 Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), Ping sequnce: $($iCount + 1)"
                 foreach($item in $pingHistory.Values){
+                    $paddingSize = 20 - $item.IPAddress.length
                     Write-Host -NoNewline "Ip:"
                     Write-Host -ForegroundColor Green -NoNewline "$($item.IPAddress) "
-                    Write-Host -NoNewline "time:"
+                    Write-Host -NoNewline "time:".PadLeft($paddingSize," ")
                     Write-Host -ForegroundColor Green -NoNewline "$($item.ResponsTime) "
-                    Write-Host "$($item.Result)"
+                    if ($item.Result -like "*.*"){
+                        Write-Host -ForegroundColor Red "$($item.Result)"
+                    }else{
+                        Write-Host "$($item.Result)"
+                    }
+                    
                 }
       
                 
@@ -100,7 +107,7 @@ function Ping-IpList
                     else
                     {
                         $pingStatistics.IPAddress = $ip
-                        $pingStatistics.ResponsTime = 9999
+                        $pingStatistics.ResponsTime = "-"
                         $pingStatistics.Result = $pingResult.Status
                         $results += $pingStatistics
                     }
