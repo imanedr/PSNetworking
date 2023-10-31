@@ -58,7 +58,11 @@ function Ping-IpList
                 Clear-Host
                 Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), Ping sequnce: $($iCount + 1)"
                 foreach($item in $pingHistory.Values){
-                    Write-Host "$($item.IPAddress)    $($item.ResponsTime)     $($item.Result)"
+                    Write-Host -NoNewline "Ip:"
+                    Write-Host -ForegroundColor Green -NoNewline "$($item.IPAddress) "
+                    Write-Host -NoNewline "time:"
+                    Write-Host -ForegroundColor Green -NoNewline "$($item.ResponsTime) "
+                    Write-Host "$($item.Result)"
                 }
       
                 
