@@ -1,4 +1,4 @@
-function Test-SubnetToSubnet {
+function Test-SubnetInSubnet {
     [CmdletBinding()]
     param (
         [ValidateScript({
