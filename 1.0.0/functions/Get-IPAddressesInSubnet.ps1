@@ -72,16 +72,18 @@ function Get-IPAddressesInSubnet {
 
     # Calculate the wildcard mask based on the network mask
     $wildCardMaskOctets = $maskOctets.ForEach({255 - $_})
-
+    $ordered = [System.Collections.Specialized.OrderedDictionary]::new()
     # Loop through each octet of the network ID to calculate all the IP addresses in the subnet
     for ($i= $netIdOctets[0]; $i -le ($netIdOctets[0] -bor $wildCardMaskOctets[0]); $i++){
         for ($j= $netIdOctets[1]; $j -le ($netIdOctets[1] -bor $wildCardMaskOctets[1]); $j++){
             for ($k= $netIdOctets[2]; $k -le ($netIdOctets[2] -bor $wildCardMaskOctets[2]); $k++){
                 for ($l= $netIdOctets[3]; $l -le ($netIdOctets[3] -bor $wildCardMaskOctets[3]); $l++){
                     # Write the calculated IP address to the output stream
-                    Write-Output ("$i.$j.$k.$l")
+                    $ip = "$i.$j.$k.$l"
+                    $ordered.Add($ip, $ip)
                 }
             }
         }
     }
+    Return $ordered.Values
 }

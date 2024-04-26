@@ -30,11 +30,11 @@ function Get-IpAddressesInRange {
     # Get the octets of the start and end IP addresses
     $startIPOctets = $startIP.GetAddressBytes()
     $endIPOctets = $endIP.GetAddressBytes()
-
+    $ordered = [System.Collections.Specialized.OrderedDictionary]::new()
     # Loop through the IP addresses in the range
     While ($startIP -ne $endip){
         # Output the current IP address
-        Write-Output $startIP.IPAddressToString
+        $ordered.Add($startIP.IPAddressToString, $startIP.IPAddressToString)
 
         # Get the octets of the current IP address
         $iBytes =  $startIP.GetAddressBytes()
@@ -51,7 +51,7 @@ function Get-IpAddressesInRange {
         # Set the current IP address to the next IP address
         $startIP = [IPAddress]$nextBytes
     }
-
+    $ordered.Values
     # Output the end IP address
     $endip.IPAddressToString
 }

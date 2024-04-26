@@ -1,4 +1,4 @@
-function Ping-IpList {
+function Ping-IpListTest {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
