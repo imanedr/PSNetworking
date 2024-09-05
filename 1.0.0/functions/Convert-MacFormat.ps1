@@ -1,129 +1,77 @@
 <#
 .SYNOPSIS
-    Converts a MAC address between Cisco and Regular formats.
+    Converts MAC addresses between Cisco format (xxxx.xxxx.xxxx) and regular format (xx:xx:xx:xx:xx:xx or xx-xx-xx-xx-xx-xx).
 
 .DESCRIPTION
-    This script allows you to convert MAC addresses between the Cisco and Regular formats. 
-    A Cisco MAC address is in the format "abcd.ef12.3456", while a Regular MAC address 
-    is in the format "ab:cd:ef:12:34:56". If no MAC address is provided as input, the script 
-    fetches the MAC address from the clipboard content, making it convenient to use on-the-go.
+    The Convert-MacAddressFormat function accepts either a single MAC address or a list of MAC addresses and converts them from one format to another automatically.
+    It can detect Cisco format (xxxx.xxxx.xxxx) and convert it to regular format (xx:xx:xx:xx:xx:xx or xx-xx-xx-xx-xx-xx) and vice versa.
 
 .PARAMETER InputMacAddress
-    The MAC address to be converted. If not provided, the script checks the clipboard.
+    A single MAC address or a list of MAC addresses to be converted.
+    Accepts both individual MAC addresses and lists of MAC addresses as input.
 
-.PARAMETER TargetFormat
-    The desired output format ('Cisco' or 'Regular'). If omitted, the function will convert to the opposite format 
-    based on the current format of the input.
+.PARAMETER GetMacFromClipboard
+    When this switch is provided, the function will retrieve MAC addresses from the clipboard instead of the InputMacAddress parameter.
 
 .EXAMPLE
-    Convert-MacAddressFormat -InputMacAddress "ab:cd:ef:12:34:56" -TargetFormat "Cisco"
+    Convert-MacAddressFormat -InputMacAddress "1234.5678.9abc"
+    Converts a Cisco formatted MAC address to regular format and outputs "12:34:56:78:9a:bc".
 
-    This example converts a Regular formatted MAC address to Cisco format.
-    
 .EXAMPLE
-    Convert-MacAddressFormat -InputMacAddress "abcd.ef12.3456"
+    Convert-MacAddressFormat -InputMacAddress "00:1A:2B:3C:4D:5E"
+    Converts a regular formatted MAC address to Cisco format and outputs "001a.2b3c.4d5e".
 
-    This example converts a Cisco formatted MAC address to Regular format.
-    
 .EXAMPLE
-    Set-Clipboard "ab:cd:ef:12:34:56"
-    Convert-MacAddressFormat
+    $macAddresses = @("1234.5678.9abc", "00:1A:2B:3C:4D:5E")
+    Convert-MacAddressFormat -InputMacAddress $macAddresses
+    Converts a list of MAC addresses and outputs both in their converted formats.
 
-    This example converts a Regular formatted MAC address to Cisco format by using the clipboard content.
+.EXAMPLE
+    Convert-MacAddressFormat -GetMacFromClipboard
+    Retrieves a MAC address or list of MAC addresses from the clipboard, converts them to the alternate format, and outputs the result.
+
+.INPUTS
+    [String[]] 
+    A single MAC address or an array of MAC addresses.
+
+.OUTPUTS
+    [String] 
+    The formatted MAC address in the alternate format.
 
 .NOTES
     Author: Your Name
-    Date: October 2023
+    Date:   2023-09-04
 #>
-
 function Convert-MacAddressFormat {
     [CmdletBinding()]
-    param(
-        [Parameter(Mandatory=$false)]
-        [string]$InputMacAddress,
+    param (
+        [Parameter(Mandatory = $false, ValueFromPipeline = $true, Position = 0)]
+        [Alias("MAC")]
+        [String[]]$InputMacAddress,
 
-        [Parameter(Mandatory=$false)]
-        [ValidateSet('Cisco','Regular')]
-        [string]$TargetFormat
+        [Parameter(Mandatory = $false)]
+        [switch]$GetMacFromClipboard
     )
 
-    function Detect-MacAddressFormat {
-        param(
-            [Parameter(Mandatory=$true)]
-            [string]$MacAddress
-        )
-
-        $regexCisco = '^([0-9a-fA-F]{4}\.){2}[0-9a-fA-F]{4}$'
-        $regexRegular = '^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$'
-
-        if ($MacAddress -match $regexCisco) {
-            return 'Cisco'
-        } elseif ($MacAddress -match $regexRegular) {
-            return 'Regular'
-        } else {
-            return $null
-        }
-    }
-
-    # If no MAC address is specified, get it from the clipboard
-    if (-not $InputMacAddress) {
-        try {
-            $clipboardContent = Get-Clipboard
-        }
-        catch {
-            Write-Error "Error accessing clipboard: $_"
-            return
+    process {
+        if ($GetMacFromClipboard) {
+            $InputMacAddress = Get-Clipboard
         }
         
-        # Split the clipboard content by line
-        $macAddresses = $clipboardContent -split "`r?`n"
-        
-        foreach ($macAddress in $macAddresses) {
-            $macAddress = $macAddress.Trim()
-
-            # If the line is empty, skip it
-            if (-not [string]::IsNullOrWhiteSpace($macAddress)) {
-                $currentFormat = Detect-MacAddressFormat -MacAddress $macAddress
-                if ($currentFormat) {
-                    if (-not $TargetFormat) {
-                        $TargetFormat = if ($currentFormat -eq 'Cisco') { 'Regular' } else { 'Cisco' }
-                    }
-
-                    $convertedAddress = Convert-MacAddressFormat -InputMacAddress $macAddress -TargetFormat $TargetFormat
-                    Write-Host $convertedAddress
-                }
-                else {
-                    Write-Host "Invalid MAC address: $macAddress"
-                }
+        foreach ($macAddress in $InputMacAddress) {
+            if ($macAddress -match '^([0-9a-fA-F]{4}\.){2}[0-9a-fA-F]{4}$') {
+                # Cisco format xxxx.xxxx.xxxx to xx:xx:xx:xx:xx:xx
+                $normalizedMac = $macAddress -replace '\.', ''
+                $formattedMac = ($normalizedMac -split '(?<=\G..)(?!$)') -join ':'
+                Write-Output $formattedMac
+            } elseif ($macAddress -match '^([0-9a-f]{2}(:|-)){5}[0-9a-f]{2}$') {
+                # Regular format xx:xx:xx:xx:xx:xx or xx-xx-xx-xx-xx-xx to Cisco format xxxx.xxxx.xxxx
+                $cleanedMac = $macAddress -replace '[:|-]', ''
+                $formattedMac = $cleanedMac -replace '(.{4})(.{4})(.{4})', '$1.$2.$3'
+                Write-Output $formattedMac
+            } else {
+                Write-Error "Invalid MAC address format: $macAddress"
             }
         }
-        return
     }
-
-    # Determine input type if not explicitly specified
-    if (-not $TargetFormat) {
-        $currentFormat = Detect-MacAddressFormat -MacAddress $InputMacAddress
-
-        if (-not $currentFormat) {
-            Write-Error "Invalid MAC address format"
-            return $null
-        }
-
-        $TargetFormat = if ($currentFormat -eq 'Cisco') { 'Regular' } else { 'Cisco' }
-    }
-
-    switch ($TargetFormat) {
-        'Cisco' {
-            $ConvertedMac = ($InputMacAddress -replace ':', '').ToLower() -replace '(\w{4})(\w{4})(\w{4})', '$1.$2.$3'
-        }
-        'Regular' {
-            $ConvertedMac = ($InputMacAddress -replace '\.', '').ToLower() -replace '(\w{2})(\w{2})(\w{2})(\w{2})(\w{2})(\w{2})', '$1:$2:$3:$4:$5:$6'
-        }
-        default {
-            Write-Error "Unknown TargetFormat specified."
-            return $null
-        }
-    }
-
-    return $ConvertedMac
 }
