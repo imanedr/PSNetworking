@@ -21,9 +21,10 @@
     A8-C6-47
 
 #>
-function Convert-MacAddressToOUI {
+function Convert-MacAddressToOUI
+{
     param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$macAddress
     )
     
@@ -31,7 +32,8 @@ function Convert-MacAddressToOUI {
     $macAddress = $macAddress -replace '[^0-9A-Fa-f]', ''
     
     # Ensure the MAC Address is at least 6 hexadecimal characters long
-    if ($macAddress.Length -lt 6) {
+    if ($macAddress.Length -lt 6)
+    {
         throw "Invalid MAC address format"
     }
     
@@ -70,39 +72,59 @@ function Convert-MacAddressToOUI {
     ...
 
 #>
-function Find-OUI {
+function Find-OUI
+{
     param (
-        [Parameter(Mandatory=$true)]
-        [string]$macAddress,
+        [Parameter(Mandatory = $false, ValueFromPipeline = $true, Position = 0)]
+        [Alias("MAC")]
+        [String[]]$macAddress,
+        [switch]$GetMacFromClipboard,
         [string]$filePath = "$PSScriptRoot\OUI.csv"  # Default to the same directory as the script
     )
     
     # Check if the file exists
-    if (-Not (Test-Path -Path $filePath)) {
+    if (-Not (Test-Path -Path $filePath))
+    {
         Write-Host "CSV file not found at path: $filePath"
         return $null
     }
     
-    # Convert the MAC address to OUI format
-    $oui = Convert-MacAddressToOUI -macAddress $macAddress
+    # If Get-MacFromClipboard is specified, get the MAC address from the clipboard
+    if ($GetMacFromClipboard)
+    {
+        $macAddress = Get-Clipboard 
+    }
     
-    # Use Select-String to search for the OUI in the file
-    $pattern = "^$oui,"
-    $match = Select-String -Path $filePath -Pattern $pattern -CaseSensitive
-    
-    # Process the matching line if found
-    if ($match) {
-        $line = $match.Line
-        $splitLine = $line -split ','
+    # Convert the MAC addresses to uppercase
 
-        return [PSCustomObject]@{
-            MACAddress = $macAddress
-            OUI = $splitLine[0]
-            Company = $splitLine[1]
+    foreach ($mac in $macAddress)
+    {
+        # Convert the MAC address to OUI format
+        if ($mac)
+        {
+            $oui = Convert-MacAddressToOUI -macAddress $mac
+        
+            # Use Select-String to search for the OUI in the file
+            $pattern = "^$oui,"
+            $match = Select-String -Path $filePath -Pattern $pattern -CaseSensitive
+    
+            # Process the matching line if found
+            if ($match)
+            {
+                $line = $match.Line
+                $splitLine = $line -split ','
+
+                Write-Output ([PSCustomObject]@{
+                        MACAddress = $mac
+                        OUI        = $splitLine[0]
+                        Company    = $splitLine[1]
+                    })
+            }
+            else
+            {
+                Write-Output "OUI not found for MAC address: $macAddress"
+            }
         }
-    } else {
-        Write-Host "OUI not found for MAC address: $macAddress"
-        return $null
     }
 }
 
