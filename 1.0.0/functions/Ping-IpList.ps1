@@ -91,9 +91,13 @@ function Ping-IpList
                     Write-Host -ForegroundColor Green -NoNewline "$($item.IPAddress) "
                     Write-Host -NoNewline "time:".PadLeft($paddingSize, " ")
                     Write-Host -ForegroundColor Green -NoNewline "$($item.ResponsTime) "
-                    if ($item.Result -like "*.*")
+                    if ($item.Result -like "*..*")
                     {
                         Write-Host -ForegroundColor Red "$($item.Result)"
+                    }
+                    elseif ($item.Result -like "*.*")
+                    {
+                         Write-Host -ForegroundColor Yellow "$($item.Result)"
                     }
                     else
                     {
