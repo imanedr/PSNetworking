@@ -25,6 +25,20 @@ function Ping-IpList
     {
         $ipList = Get-IPAddressesInSubnet $cidr
     }
+    else
+    {
+        # Trim leading or trailing white spaces from each entry in the list
+        $ipList = $ipList | ForEach-Object { $_.Trim() }
+
+        # Removing any non-IP addresses or blank entry from the list
+        $ipList = $ipList -match "\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$"
+
+        # Check if the list does not contain any hostnames
+        if (($ipList -match "^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$").Count -eq 0)
+        {
+            $ipList = Sort-IpAddress $ipList
+        }
+    }
     
     try
     {
@@ -33,8 +47,9 @@ function Ping-IpList
         
         if ($ShowHistory)
         { 
-            $pingHistory = @{} 
-            $ipList | foreach { $pingHistory.Add($_, "") }
+            $pingHistory = [ordered]@{} 
+            $ipList.foreach({ $pingHistory.Add($_, "") })
+            $pingHistory | Out-Null
             while ($iCount -ne $Count)
             {
                 foreach ($ip in $ipList)
@@ -71,6 +86,7 @@ function Ping-IpList
                 foreach ($item in $pingHistory.Values)
                 {
                     $paddingSize = 20 - $item.IPAddress.length
+                    if ($paddingSize -lt 0) { $paddingSize = 0 }
                     Write-Host -NoNewline "Ip:"
                     Write-Host -ForegroundColor Green -NoNewline "$($item.IPAddress) "
                     Write-Host -NoNewline "time:".PadLeft($paddingSize, " ")
