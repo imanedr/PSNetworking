@@ -168,7 +168,7 @@ function Ping-IpList {
                     Write-Host -NoNewline "time:".PadLeft($paddingSize, " ")
                     Write-Host -ForegroundColor Green -NoNewline "$($item.ResponsTime) "
                     Write-Host -NoNewline "DownFor:"
-                    Write-Host -ForegroundColor Green -NoNewline "$([math]::Round($item.DownTime,0)) "
+                    Write-Host -ForegroundColor Green -NoNewline "$([math]::Round($item.DownTime,2)) "
                     if ($item.ResultHistory.EndsWith("..")) {
                         Write-Host -ForegroundColor Red "$($item.ResultHistory)"
                     }
