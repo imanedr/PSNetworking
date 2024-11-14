@@ -1,4 +1,4 @@
-function Ping-IpListV2 {
+function Ping-IpList {
    
     [CmdletBinding()]
     param (
