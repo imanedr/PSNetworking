@@ -4,19 +4,28 @@ function Ping-IpList {
     param (
         [switch]$FromClipBoard,
         [Parameter(Mandatory = $false, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+        [Alias('list')]
         [String[]]$ipList,
         [string]$range,
         [string]$cidr,
+        [Alias('n')]
         [int]$Count = 4,
+        [Alias('l')]
         [int]$BufferSize = 32,
+        [Alias('f')]
         [switch]$DontFragment,
+        [Alias('i')]
         [int]$Ttl = 128,
         [int]$Timeout = 100,
+        [Alias('c','t')]
         [switch]$Continuous,
+        [Alias('a')]
+        [switch]$ResolveDNS,
         [switch]$ShowHistory,
         [int]$HistoryResetCount = 100,
         [switch]$DontSortIpList,
-        [int]$MaxThreads = 100
+        [int]$MaxThreads = 100,
+        [switch]$OutToPipe
     )
    
     if ($range) {
@@ -40,7 +49,18 @@ function Ping-IpList {
             }
         }
     }
-    
+
+    if ($ResolveDNS) {
+        for ($i = 0; $i -lt $ipList.Count; $i++) {
+            if ($ipList[$i] -match "\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}") {
+                $NameHost = (Resolve-DnsName $ipList[$i] -Type PTR -DnsOnly -ErrorAction SilentlyContinue).NameHost
+                if ($NameHost) { 
+                    if ($NameHost.Count -gt 1) {$ipList[$i] = $NameHost[0]} else { $ipList[$i] = $NameHost }
+                }
+            }
+        }
+    }
+
     try {
         if ($Continuous) { $Count = -1 }
         $iCount = 0
@@ -156,7 +176,7 @@ function Ping-IpList {
                     $item.DownTimeStart = $null
                 }
             }
-
+            if (-not $OutToPipe) {
             if ($ShowHistory) {
                 Clear-Host
                 Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), Ping sequnce: $($iCount + 1)"
@@ -185,7 +205,9 @@ function Ping-IpList {
                 Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), Ping sequnce: $($iCount + 1)"
                 Write-Output -InputObject $pingHistory.Values | Select-Object IPAddress, ResponsTime, Result, DownTime | Format-Table -RepeatHeader -AutoSize
             }
-                
+        }else{
+            Write-Output -InputObject $pingHistory.Values | Select-Object IPAddress, ResponsTime, Result, ResultHistory, DownTime | Format-Table -RepeatHeader -AutoSize
+        }
             $iCount++
             Start-Sleep -Seconds 1
         }
