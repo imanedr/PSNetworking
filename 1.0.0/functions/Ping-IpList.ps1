@@ -1,3 +1,84 @@
+<#
+.SYNOPSIS
+    Pings a list of IPs or a specified IP range or CIDR and reports their status.
+
+.DESCRIPTION
+    The Ping-IpList cmdlet is used to ping a list of IP addresses, a defined range, or a CIDR block.
+    It can display ping results, including the history of any downtimes.
+
+.PARAMETER FromClipBoard
+    Pings IP addresses copied to clipboard.
+
+.PARAMETER ipList
+    A list of IP addresses to be pinged.
+
+.PARAMETER range
+    A range of IP addresses to be pinged.
+
+.PARAMETER cidr
+    A CIDR block of IP addresses to be pinged.
+
+.PARAMETER Count
+    Specifies the number of echo requests to send.
+
+.PARAMETER BufferSize
+    Size of the buffer to be sent with the echo request.
+
+.PARAMETER DontFragment
+    Specifies if the buffer should be fragmented.
+
+.PARAMETER Ttl
+    Time to live for the echo requests sent.
+
+.PARAMETER Timeout
+    Maximum time to wait for each reply.
+
+.PARAMETER Continuous
+    Continuously pings the IPs until stopped manually.
+
+.PARAMETER ResolveDNS
+    Resolves the DNS names for the IPs.
+
+.PARAMETER ShowHistory
+    Displays the history of ping results.
+
+.PARAMETER HistoryResetCount
+    Number of pings after which the history is reset.
+
+.PARAMETER DontSortIpList
+    Prevents sorting of the IP list.
+
+.PARAMETER MaxThreads
+    Maximum number of threads to use for pinging.
+
+.PARAMETER OutToPipe
+    Outputs the results to the pipeline.
+
+.EXAMPLE
+    Ping-IpList -ipList 192.168.1.1,192.168.1.2
+
+    Pings the IP addresses 192.168.1.1 and 192.168.1.2.
+
+.EXAMPLE
+    Ping-IpList -range 192.168.1.1-192.168.1.255
+
+    Pings all IP addresses in the specified range.
+
+.EXAMPLE
+    Ping-IpList -cidr 192.168.1.0/24
+
+    Pings all IP addresses within the specified CIDR block.
+
+.INPUTS
+    None. You cannot pipe input to this cmdlet.
+
+.OUTPUTS
+    System.String. The ping results are displayed on the console.
+
+.NOTES
+    Author: Iman Edrisian
+    Date: 2024-11-15
+#>
 function Ping-IpList {
    
     [CmdletBinding()]
@@ -206,7 +287,10 @@ function Ping-IpList {
                 Write-Output -InputObject $pingHistory.Values | Select-Object IPAddress, ResponsTime, Result, DownTime | Format-Table -RepeatHeader -AutoSize
             }
         }else{
-            Write-Output -InputObject $pingHistory.Values | Select-Object IPAddress, ResponsTime, Result, ResultHistory, DownTime
+            Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), Ping sequnce: $($iCount + 1)"
+            if ($iCount -eq ($Count - 1)) {
+                Write-Output -InputObject $pingHistory.Values | Select-Object IPAddress, ResponsTime, Result, ResultHistory, DownTime
+            }
         }
             $iCount++
             Start-Sleep -Seconds 1
