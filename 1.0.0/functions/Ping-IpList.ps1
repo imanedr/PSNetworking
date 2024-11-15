@@ -161,14 +161,13 @@ function Ping-IpList {
                 Clear-Host
                 Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), Ping sequnce: $($iCount + 1)"
                 foreach ($item in $pingHistory.Values) {
-                    $paddingSize = 20 - $item.IPAddress.length
-                    if ($paddingSize -lt 0) { $paddingSize = 0 }
-                    Write-Host -NoNewline "Ip:"
-                    Write-Host -ForegroundColor Green -NoNewline "$($item.IPAddress) "
-                    Write-Host -NoNewline "time:".PadLeft($paddingSize, " ")
-                    Write-Host -ForegroundColor Green -NoNewline "$($item.ResponsTime) "
+                    # $paddingSize = 20 - $item.IPAddress.length
+                    # if ($paddingSize -lt 0) { $paddingSize = 0 }
+                    Write-Host -ForegroundColor Green -NoNewline "$($item.IPAddress) ["
+                    Write-Host -NoNewline "t:"#.PadLeft($paddingSize, " ")
+                    Write-Host -ForegroundColor Green -NoNewline "$($item.ResponsTime)ms "
                     Write-Host -NoNewline "DownFor:"
-                    Write-Host -ForegroundColor Green -NoNewline "$([math]::Round($item.DownTime,2)) "
+                    Write-Host -ForegroundColor Green -NoNewline "$([math]::Round($item.DownTime,2))s]:"
                     if ($item.ResultHistory.EndsWith("..")) {
                         Write-Host -ForegroundColor Red "$($item.ResultHistory)"
                     }
