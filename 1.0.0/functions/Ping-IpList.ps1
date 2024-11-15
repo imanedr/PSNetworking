@@ -206,7 +206,7 @@ function Ping-IpList {
                 Write-Output -InputObject $pingHistory.Values | Select-Object IPAddress, ResponsTime, Result, DownTime | Format-Table -RepeatHeader -AutoSize
             }
         }else{
-            Write-Output -InputObject $pingHistory.Values | Select-Object IPAddress, ResponsTime, Result, ResultHistory, DownTime | Format-Table -RepeatHeader -AutoSize
+            Write-Output -InputObject $pingHistory.Values | Select-Object IPAddress, ResponsTime, Result, ResultHistory, DownTime
         }
             $iCount++
             Start-Sleep -Seconds 1
