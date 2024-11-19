@@ -1,58 +1,128 @@
-# 🌐 PowerShell Networking Toolkit
+# PSNetworking PowerShell Module
 
-A powerful collection of PowerShell scripts for network administrators and IT professionals to efficiently manage and automate networking tasks.
+A comprehensive PowerShell networking toolkit for network administrators and IT professionals.
 
-## ⭐ Key Features
+## 🚀 Overview
 
-- 📋 IP Address Range Management
-- 🔍 Network Discovery & Scanning
-- 🧮 Subnet Calculations
-- 📡 Network Connectivity Testing
-- 📊 IP Address Organization
+PSNetworking is a powerful PowerShell module that provides a collection of networking utilities for IP address management, network diagnostics, and network information retrieval.
 
-## 🚀 Quick Start
+## 📦 Installation
 
-1. Clone the repository:
+```powershell
+# Install from PowerShell Gallery (coming soon)
+Install-Module -Name PSNetworking
+```
 
-git clone https://github.com/imanedr/psnetworking.git
+## 🛠 Functions
 
-2. Navigate to the project directory
-3. Run scripts using PowerShell
+### IP Address Management
 
-## 📚 Available Tools
+1. **Convert-IpListToSubnets**
+   - Converts a list of IP addresses into the most efficient subnet representations
+   - Supports CIDR notation and traditional IP formats
+   ```powershell
+   Convert-IpListToSubnets -IPAddressList @("192.168.1.1", "192.168.1.2", "192.168.1.3")
+   ```
 
-### IP Management
+2. **Get-IPAddressesInSubnet**
+   - Lists all IP addresses within a specified subnet using CIDR notation
+   ```powershell
+   Get-IPAddressesInSubnet -Subnet "192.168.1.0/24"
+   ```
 
-| Script | Description | Example |
-|--------|-------------|---------|
-| `Get-IpAddressesInRange.ps1` | Generate IP lists from ranges | `.\Get-IpAddressesInRange.ps1 -StartIPAddress 192.168.1.1 -EndIPAddress 192.168.1.10` |
-| `Get-IPAddressesInSubnet.ps1` | List all IPs in subnet | `.\Get-IPAddressesInSubnet.ps1 -IPAddress 192.168.1.1 -SubnetMask 255.255.255.0` |
-| `Get-IPCalc.ps1` | Calculate subnet details | `.\Get-IPCalc.ps1 -IPAddress 192.168.1.1 -SubnetMask 255.255.255.0` |
+3. **Get-IpAddressesInRange**
+   - Generates a list of IP addresses within a specified IP range
+   ```powershell
+   Get-IpAddressesInRange -Range "192.168.1.1-192.168.1.5"
+   ```
 
-### Network Tools
+4. **Sort-IpAddress**
+   - Sorts an array of IP addresses in ascending order
+   ```powershell
+   Sort-IpAddress -IpAddressList "192.168.0.1","192.168.0.10","192.168.0.2"
+   ```
 
-| Script | Description | Example |
-|--------|-------------|---------|
-| `Get-PublicIP.ps1` | Get your public IP | `.\Get-PublicIP.ps1` |
-| `Ping-Network.ps1` | Sweep network with ping | `.\Ping-Network.ps1 -StartIPAddress 192.168.1.1 -EndIPAddress 192.168.1.10` |
-| `Sort-IpAddress.ps1` | Sort IPs numerically | `.\Sort-IpAddress.ps1 -IPAddressList 192.168.1.10, 192.168.1.1` |
-| `Test-IpInSubnet.ps1` | Check IP subnet membership | `.\Test-IpInSubnet.ps1 -IPAddress 192.168.1.1 -SubnetMask 255.255.255.0 -TargetIPAddress 192.168.1.5` |
+5. **Test-IpInSubnet**
+   - Validates if an IP address falls within a specified subnet or range
+   ```powershell
+   Test-IpInSubnet -IPv4Address "192.168.1.100" -SubnetOrRange "192.168.1.0/24"
+   ```
 
-## 💡 Usage Tips
+6. **Test-SubnetInSubnet**
+   - Determines if one subnet is fully contained within another subnet
+   ```powershell
+   Test-SubnetInSubnet -FirstSubnet "192.168.1.0/24" -SecondSubnet "192.168.0.0/16"
+   ```
 
-- All scripts support the `-Help` parameter for detailed instructions
-- Run scripts from PowerShell with administrator privileges when needed
-- Use tab completion for parameter names and values
+### Network Diagnostics
+
+1. **Ping-Ip**
+   - Advanced ping utility with detailed connectivity testing
+   ```powershell
+   Ping-Ip -ComputerName "www.google.com"
+   ```
+
+2. **Ping-IpList**
+   - Parallel ping utility for multiple IP addresses
+   ```powershell
+   Ping-IpList -ipList "8.8.8.8","1.1.1.1" -Count 10
+   ```
+
+### Network Information
+
+1. **Get-IpConfig**
+   - Retrieves IP configuration for network interfaces
+   ```powershell
+   Get-IpConfig  # Shows active physical interfaces
+   Get-IpConfig -ShowAll  # Shows all interfaces
+   ```
+
+2. **Get-PublicIP**
+   - Monitors and displays your public IP address
+   ```powershell
+   Get-PublicIP
+   ```
+
+### MAC Address Utilities
+
+1. **Convert-MacAddressFormat**
+   - Converts MAC addresses between Cisco and regular formats
+   ```powershell
+   Convert-MacAddressFormat -InputMacAddress "1234.5678.9abc"
+   ```
+
+2. **Find-OUI**
+   - Identifies vendor information from MAC addresses
+   ```powershell
+   Find-OUI -macAddress "A8-C6-47-12-34-56"
+   ```
+
+### Network Performance
+
+1. **Get-BandwidthUsage**
+   - Monitors real-time bandwidth usage for network interfaces
+   ```powershell
+   Get-BandwidthUsage -InterfaceName "Ethernet"
+   ```
 
 ## 🔧 Requirements
 
 - PowerShell 5.1 or higher
-- Windows PowerShell or PowerShell Core
-- Administrator rights (for some network operations)
+- Administrator privileges for some network operations
 
-## 📖 Documentation
+## 📄 License
 
-Each script includes detailed help documentation. Access it using:
+[MIT License](https://github.com/imanedr/psnetworking/blob/main/LICENSE)
 
-Get-Help .\ScriptName.ps1 -Full
+## 🤝 Contributing
+
+Contributions are welcome! Please check the [GitHub repository](https://github.com/imanedr/psnetworking) for guidelines.
+
+## 📞 Support
+
+For issues and feature requests, please file an issue on the [GitHub repository](https://github.com/imanedr/psnetworking).
+
+## 👨‍💻 Author
+
+Iman Edrisian
 
