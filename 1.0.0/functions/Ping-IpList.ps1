@@ -77,7 +77,7 @@
 
 .NOTES
     Author: Iman Edrisian
-    Date: 2024-11-19
+    Date: 2024-11-18
 #>
 function Ping-IpList {
    
