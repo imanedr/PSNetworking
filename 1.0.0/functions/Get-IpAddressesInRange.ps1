@@ -1,22 +1,41 @@
-function Get-IpAddressesInRange {
-    <#
-    .SYNOPSIS
-    Returns all IP addresses in a given range.
+<#
+.SYNOPSIS
+    Generates a list of IP addresses within a specified IP range.
 
-    .DESCRIPTION
-    This function takes a range of IP addresses as input and returns all IP addresses in that range. The range is specified as two IP addresses separated by a hyphen.
+.DESCRIPTION
+    The Get-IpAddressesInRange function takes a range of IP addresses and returns all IP addresses within that range inclusively. 
+    It handles IPv4 addresses and outputs them in ascending order.
 
-    .PARAMETER Range
-    The range of IP addresses to return, specified as two IP addresses separated by a hyphen.
+.PARAMETER Range
+    Specifies the IP address range in the format "startIP-endIP".
+    Example: "192.168.1.1-192.168.1.10"
 
-    .EXAMPLE
+.EXAMPLE
     Get-IpAddressesInRange -Range "192.168.1.1-192.168.1.5"
-    Returns all IP addresses in the range 192.168.1.1 to 192.168.1.5.
+    
+    Returns:
+    192.168.1.1
+    192.168.1.2
+    192.168.1.3
+    192.168.1.4
+    192.168.1.5
 
-    .OUTPUTS
-    System.Net.IPAddress
-    The function returns a list of System.Net.IPAddress objects.
-    #>
+.NOTES
+    Author: Iman Edrisian
+    Version: 1.0.0
+    Requires: PowerShell 5.1 or higher
+
+.LINK
+    https://github.com/imanedr/psnetworking
+
+.INPUTS
+    System.String
+
+.OUTPUTS
+    System.String[]
+#>
+
+function Get-IpAddressesInRange {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]

@@ -1,84 +1,118 @@
 <#
 .SYNOPSIS
-    Pings a list of IPs or a specified IP range or CIDR and reports their status.
+    Advanced parallel ping utility for multiple IP addresses with history tracking and statistics.
 
 .DESCRIPTION
-    The Ping-IpList cmdlet is used to ping a list of IP addresses, a defined range, or a CIDR block.
-    It can display ping results, including the history of any downtimes.
+    Ping-IpList provides powerful network connectivity testing capabilities with features like:
+    - Parallel ping execution for multiple targets
+    - Continuous monitoring mode
+    - Ping history visualization
+    - DNS resolution
+    - Customizable ping parameters
+    - Support for IP ranges and CIDR notation
+    - Downtime tracking
 
 .PARAMETER FromClipBoard
-    Pings IP addresses copied to clipboard.
+    Reads IP addresses from clipboard
 
 .PARAMETER ipList
-    A list of IP addresses to be pinged.
+    Array of IP addresses or hostnames to ping
 
 .PARAMETER range
-    A range of IP addresses to be pinged.
+    IP address range in format "192.168.1.1-192.168.1.254"
 
 .PARAMETER cidr
-    A CIDR block of IP addresses to be pinged.
+    CIDR notation subnet like "192.168.1.0/24"
 
 .PARAMETER Count
-    Specifies the number of echo requests to send.
+    Number of ping attempts (default: 4, use -Continuous for endless)
 
 .PARAMETER BufferSize
-    Size of the buffer to be sent with the echo request.
+    Size of ping packet in bytes (default: 32)
 
 .PARAMETER DontFragment
-    Specifies if the buffer should be fragmented.
+    Sets the Don't Fragment flag in ping packet
 
 .PARAMETER Ttl
-    Time to live for the echo requests sent.
+    Time to live value (default: 128)
 
 .PARAMETER Timeout
-    Maximum time to wait for each reply.
+    Ping timeout in milliseconds (default: 100)
 
 .PARAMETER Continuous
-    Continuously pings the IPs until stopped manually.
+    Enables continuous ping mode
 
 .PARAMETER ResolveDNS
-    Resolves the DNS names for the IPs.
+    Resolves IP addresses to hostnames
 
 .PARAMETER ShowHistory
-    Displays the history of ping results.
+    Displays ping history using symbols (! for success, . for failure)
 
 .PARAMETER HistoryResetCount
-    Number of pings after which the history is reset.
+    Number of results to keep in history before reset (default: 100)
 
 .PARAMETER DontSortIpList
-    Prevents sorting of the IP list.
+    Prevents automatic IP address sorting
 
 .PARAMETER MaxThreads
-    Maximum number of threads to use for pinging.
+    Maximum number of concurrent ping threads (default: 100)
 
 .PARAMETER OutToPipe
-    Outputs the results to the pipeline.
+    Outputs results to pipeline instead of console
 
 .EXAMPLE
-    Ping-IpList -ipList 192.168.1.1,192.168.1.2
+    # Copy these IPs to your clipboard:
+    # 192.168.1.10
+    # 8.8.8.8
+    # 1.1.1.1
+    Ping-IpList -FromClipBoard -ShowHistory
 
-    Pings the IP addresses 192.168.1.1 and 192.168.1.2.
+    Output:
+    2024-11-19 14:01:24, Ping sequnce: 1
+    192.168.1.10 [t:1ms DownFor:0s]:!
+    8.8.8.8     [t:27ms DownFor:0s]:!
+    1.1.1.1     [t:18ms DownFor:0s]:!
+
+    This example shows how to quickly ping multiple IPs by copying them from any source (text file, Excel, web page).
+    Just ensure each IP is on a new line before copying.
+
 
 .EXAMPLE
-    Ping-IpList -range 192.168.1.1-192.168.1.255
+    Ping-IpList -ipList "8.8.8.8","1.1.1.1" -Count 10
 
-    Pings all IP addresses in the specified range.
+    Output:
+    IPAddress ResponsTime  Result   DownTime
+    --------- -----------  ------   --------
+    1.1.1.1            18 Success
+    8.8.8.8            27 Success
 
 .EXAMPLE
-    Ping-IpList -cidr 192.168.1.0/24
+    Ping-IpList -range "192.168.1.1-192.168.1.10" -Continuous -ShowHistory
 
-    Pings all IP addresses within the specified CIDR block.
+    Output:
+    2024-11-19 13:57:24, Ping sequnce: 7
+    192.168.1.1 [t:1ms DownFor:0s]:!!!!!!!
+    192.168.1.2 [t:-ms DownFor:9s]:.......
+    192.168.1.3 [t:-ms DownFor:9s]:.......
+    [...]
 
-.INPUTS
-    None. You cannot pipe input to this cmdlet.
+.EXAMPLE
+    Ping-IpList -cidr "10.0.0.0/29" -ResolveDNS
 
-.OUTPUTS
-    System.String. The ping results are displayed on the console.
+    Output:
+    2024-11-19 13:58:09, Ping sequnce: 4
+    IPAddress           ResponsTime Result   DownTime
+    ---------          ----------- ------   --------
+    10.0.0.0           -           TimedOut     4.49
+    host1.example.com   1           Success
+    10.0.0.2           1           Success
+    host3.example.com   1           Success
+    [...]
 
 .NOTES
-    Author: Iman Edrisian
-    Date: 2024-11-19
-
+    Author: PSNetworking Toolkit
+    Requires: PowerShell 5.1 or higher
+    Tags: Network, Monitoring, Ping
 #>
 function Ping-IpList {
    

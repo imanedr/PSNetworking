@@ -46,32 +46,50 @@ function Convert-MacAddressToOUI
 
 <#
 .SYNOPSIS
-    Finds the OUI and company name for a given MAC address from a CSV file.
+    Identifies vendor information from MAC addresses using OUI lookup.
 
 .DESCRIPTION
-    This function reads a CSV file where each line contains an OUI and a company name, 
-    and finds the corresponding company name for a given MAC address.
+    The Find-OUI function takes MAC addresses and identifies the vendor/manufacturer by looking up the OUI (Organizationally Unique Identifier) in a CSV database. It supports single or multiple MAC addresses, pipeline input, and can read directly from clipboard.
 
 .PARAMETER macAddress
-    The MAC address to find the corresponding OUI and company name for.
+    One or more MAC addresses to lookup. Accepts various formats:
+    - With dashes (00-11-22-33-44-55)
+    - With colons (00:11:22:33:44:55)
+    - Without separators (001122334455)
+
+.PARAMETER GetMacFromClipboard
+    Switch parameter to read MAC address directly from clipboard instead of providing it as parameter.
 
 .PARAMETER filePath
-    The path to the CSV file containing OUI and company name mappings. Defaults to "OUI.csv" in the same directory as the script.
+    Path to the OUI database CSV file. Defaults to OUI.csv in the script's directory.
 
 .EXAMPLE
-    PS> Find-OUI -macAddress "A8-C6-47-12-34-56" -filePath "OUI.csv"
-    MACAddress OUI      Company
-    ---------- ---      -------
-    A8-C6-47-12-34-56 A8-C6-47 Extreme Networks Headquarters
+    Find-OUI -macAddress "A8-C6-47-12-34-56"
+    Looks up vendor information for a single MAC address
+
+.EXAMPLE
+    "00:11:22:33:44:55", "AA:BB:CC:DD:EE:FF" | Find-OUI
+    Looks up vendor information for multiple MAC addresses via pipeline
+
+.EXAMPLE
+    Find-OUI -GetMacFromClipboard
+    Reads MAC address from clipboard and performs lookup
+
+.OUTPUTS
+    PSCustomObject with properties:
+    - MACAddress: The input MAC address
+    - OUI: The extracted OUI
+    - Company: The vendor/manufacturer name
 
 .NOTES
-    The CSV file should have the following format:
-    OUI,Company
-    10-E9-92,INGRAM MICRO SERVICES
-    78-F2-76,Cyklop Fastjet Technologies (Shanghai) Inc.
-    ...
-
+    Requires:
+    - OUI.csv database file in the specified path
+    - Read access to the CSV file
+    
+.LINK
+    https://github.com/imanedr/psnetworking
 #>
+
 function Find-OUI
 {
     param (

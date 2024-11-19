@@ -1,18 +1,38 @@
 <#
 .SYNOPSIS
-Get-IPAddressesInSubnet returns all IP addresses in a subnet specified by a subnet mask in CIDR notation.
+    Lists all IP addresses within a specified subnet using CIDR notation.
 
 .DESCRIPTION
-This function takes a subnet specified in CIDR notation (e.g. 192.168.0.0/24) and returns all IP addresses in the subnet. The function uses bitwise operations to calculate the network ID and wildcard mask from the subnet mask, and then loops through all possible IP addresses in the subnet to generate a list of IP addresses.
+    The Get-IPAddressesInSubnet function generates a complete list of all possible IP addresses 
+    within a given subnet specified in CIDR notation. It supports all subnet masks from /0 to /32.
 
 .PARAMETER Subnet
-Mandatory string parameter to specify the subnet in CIDR notation (e.g. 192.168.0.0/24)
+    Specifies the subnet in CIDR notation (e.g., "192.168.0.0/24")
 
 .EXAMPLE
-Get-IPAddressesInSubnet -Subnet "192.168.0.0/24"
+    Get-IPAddressesInSubnet -Subnet "192.168.1.0/24"
+    Lists all IP addresses in the 192.168.1.0/24 subnet (256 addresses)
 
-This example returns a list of all IP addresses in the subnet specified by the subnet mask 192.168.0.0/24.
+.EXAMPLE
+    Get-IPAddressesInSubnet -Subnet "10.0.0.0/30"
+    Lists all IP addresses in the 10.0.0.0/30 subnet (4 addresses)
+
+.INPUTS
+    String
+
+.OUTPUTS
+    System.String[]
+    Returns an array of IP addresses as strings
+
+.NOTES
+    Author: Iman Edrisian
+    Version: 1.0.0
+    Requires PowerShell 5.1 or higher
+
+.LINK
+    https://github.com/imanedr/psnetworking
 #>
+
 function Get-IPAddressesInSubnet {
     [CmdletBinding()]
     param (

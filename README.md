@@ -1,83 +1,58 @@
-**README.md**
+# 🌐 PowerShell Networking Toolkit
 
-```markdown
-# PowerShell Networking Toolkit
+A powerful collection of PowerShell scripts for network administrators and IT professionals to efficiently manage and automate networking tasks.
 
-A comprehensive collection of PowerShell networking utilities designed to streamline network management and automate common networking tasks.
+## ⭐ Key Features
 
-## Core Features
+- 📋 IP Address Range Management
+- 🔍 Network Discovery & Scanning
+- 🧮 Subnet Calculations
+- 📡 Network Connectivity Testing
+- 📊 IP Address Organization
 
-- IP Address Management
-- Network Scanning
-- Subnet Calculations
-- Network Testing
-- IP Address Sorting
+## 🚀 Quick Start
 
-## Available Scripts
+1. Clone the repository:
 
-### IP Address Management
+git clone https://github.com/imanedr/psnetworking.git
 
-- `Get-IpAddressesInRange.ps1`: Generate IP address lists from specified ranges.
-  Example:
-  ```powershell
-  .\Get-IpAddressesInRange.ps1 -StartIPAddress 192.168.1.1 -EndIPAddress 192.168.1.10
-  ```
+2. Navigate to the project directory
+3. Run scripts using PowerShell
 
-- `Get-IPAddressesInSubnet.ps1`: Enumerate all IP addresses within a subnet.
-  Example:
-  ```powershell
-  .\Get-IPAddressesInSubnet.ps1 -IPAddress 192.168.1.1 -SubnetMask 255.255.255.0
-  ```
+## 📚 Available Tools
 
-- `Get-IPCalc.ps1`: Advanced IP calculator for subnet details.
-  Example:
-  ```powershell
-  .\Get-IPCalc.ps1 -IPAddress 192.168.1.1 -SubnetMask 255.255.255.0
-  ```
+### IP Management
 
-### Network Discovery
-
-- `Get-PublicIP.ps1`: Retrieve your current public IP address.
-  Example:
-  ```powershell
-  .\Get-PublicIP.ps1
-  ```
-
-- `Ping-Network.ps1`: Perform network sweep with ping functionality.
-  Example:
-  ```powershell
-  .\Ping-Network.ps1 -StartIPAddress 192.168.1.1 -EndIPAddress 192.168.1.10
-  ```
+| Script | Description | Example |
+|--------|-------------|---------|
+| `Get-IpAddressesInRange.ps1` | Generate IP lists from ranges | `.\Get-IpAddressesInRange.ps1 -StartIPAddress 192.168.1.1 -EndIPAddress 192.168.1.10` |
+| `Get-IPAddressesInSubnet.ps1` | List all IPs in subnet | `.\Get-IPAddressesInSubnet.ps1 -IPAddress 192.168.1.1 -SubnetMask 255.255.255.0` |
+| `Get-IPCalc.ps1` | Calculate subnet details | `.\Get-IPCalc.ps1 -IPAddress 192.168.1.1 -SubnetMask 255.255.255.0` |
 
 ### Network Tools
 
-- `Sort-IpAddress.ps1`: Sort IP addresses numerically.
-  Example:
-  ```powershell
-  .\Sort-IpAddress.ps1 -IPAddressList 192.168.1.10, 192.168.1.1, 192.168.1.5
-  ```
+| Script | Description | Example |
+|--------|-------------|---------|
+| `Get-PublicIP.ps1` | Get your public IP | `.\Get-PublicIP.ps1` |
+| `Ping-Network.ps1` | Sweep network with ping | `.\Ping-Network.ps1 -StartIPAddress 192.168.1.1 -EndIPAddress 192.168.1.10` |
+| `Sort-IpAddress.ps1` | Sort IPs numerically | `.\Sort-IpAddress.ps1 -IPAddressList 192.168.1.10, 192.168.1.1` |
+| `Test-IpInSubnet.ps1` | Check IP subnet membership | `.\Test-IpInSubnet.ps1 -IPAddress 192.168.1.1 -SubnetMask 255.255.255.0 -TargetIPAddress 192.168.1.5` |
 
-- `Test-IpInSubnet.ps1`: Validate IP address subnet membership.
-  Example:
-  ```powershell
-  .\Test-IpInSubnet.ps1 -IPAddress 192.168.1.1 -SubnetMask 255.255.255.0 -TargetIPAddress 192.168.1.5
-  ```
+## 💡 Usage Tips
 
-## Quick Start
+- All scripts support the `-Help` parameter for detailed instructions
+- Run scripts from PowerShell with administrator privileges when needed
+- Use tab completion for parameter names and values
 
-1. Clone this repository:
+## 🔧 Requirements
 
-   ```bash
-   git clone https://github.com/yourusername/psnetworking.git
-   ```
+- PowerShell 5.1 or higher
+- Windows PowerShell or PowerShell Core
+- Administrator rights (for some network operations)
 
-2. Open a PowerShell window and navigate to the functions directory.
+## 📖 Documentation
 
-3. Run the desired script using the PowerShell command line.
+Each script includes detailed help documentation. Access it using:
 
-## Usage
+Get-Help .\ScriptName.ps1 -Full
 
-Each script has its own set of parameters and usage instructions. Run the script with the `-Help` parameter to view usage information.
-```
-
-This README file provides a comprehensive overview of the PowerShell Networking Toolkit, including the core features, available scripts, and usage examples. It also includes a quick start guide and instructions for running the scripts.

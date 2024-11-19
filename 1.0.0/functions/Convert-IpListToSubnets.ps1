@@ -1,3 +1,42 @@
+<#
+.SYNOPSIS
+    Converts a list of IP addresses into the most efficient subnet representations.
+
+.DESCRIPTION
+    The Convert-IpListToSubnets function takes a list of IP addresses and converts them into the smallest possible subnet ranges that contain all the specified IPs. It can output subnets either in CIDR notation or traditional format.
+
+.PARAMETER IPAddressList
+    An array of IP addresses to be converted into subnet ranges.
+    
+.PARAMETER NotUseCIDRfor32
+    When specified, outputs single IP addresses without the /32 CIDR notation.
+
+.EXAMPLE
+    Convert-IpListToSubnets -IPAddressList @("192.168.1.1", "192.168.1.2", "192.168.1.3")
+    Output: 192.168.1.1/32
+            192.168.1.2/31
+
+.EXAMPLE
+    Convert-IpListToSubnets -IPAddressList @("10.0.0.1", "10.0.0.5") -NotUseCIDRfor32
+    Output: 10.0.0.1, 10.0.0.5
+
+.EXAMPLE
+    $ips = @("172.16.0.0", "172.16.0.1", "172.16.0.2", "172.16.0.3")
+    Convert-IpListToSubnets -IPAddressList $ips
+    Output: 172.16.0.0/30
+
+.NOTES
+    Author: Iman Edrisian
+    Version: 1.0.0
+    Requires: PowerShell 5.1 or higher
+    
+.LINK
+    https://github.com/imanedr/psnetworking
+
+.OUTPUTS
+    System.String[]
+    Returns an array of subnet representations in CIDR notation or IP format
+#>
 function Convert-IpListToSubnets
 {
     [CmdletBinding()]

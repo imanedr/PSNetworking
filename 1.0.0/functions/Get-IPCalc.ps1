@@ -1,107 +1,81 @@
-Function Get-IPCalc {
-    <#PSScriptInfo
-.VERSION 3.1.0
-.GUID cb059a0e-09b6-4756-8df4-28e997b9d97f
-.AUTHOR saw-friendship@yandex.ru
-.COMPANYNAME
-.COPYRIGHT
-.TAGS IP Subnet Calculator WildCard CIDR
-.LICENSEURI
-.PROJECTURI https://sawfriendship.wordpress.com/
-.ICONURI
-.EXTERNALMODULEDEPENDENCIES
-.REQUIREDSCRIPTS
-.EXTERNALSCRIPTDEPENDENCIES
-.RELEASENOTES
-#>
+<#
+.SYNOPSIS
+    Advanced IP subnet calculator that provides detailed network information.
 
-    <#
 .DESCRIPTION
-IP Calculator for calculation IP Subnet
-.EXAMPLE
-Get-IPCalc -CIDR 192.168.0.0/24
-IP           : 192.168.0.0
-Mask         : 255.255.255.0
-PrefixLength : 24
-WildCard     : 0.0.0.255
-IPcount      : 256
-Subnet       : 192.168.0.0
-Broadcast    : 192.168.0.255
-CIDR         : 192.168.0.0/24
-ToDecimal    : 3232235520
-IPBin        : 11000000.10101000.00000000.00000000
-MaskBin      : 11111111.11111111.11111111.00000000
-SubnetBin    : 11000000.10101000.00000000.00000000
-BroadcastBin : 11000000.10101000.00000000.11111111
-.EXAMPLE
-Get-IPCalc -IPAddress 192.168.0.0 -Mask 255.255.255.0
-IP           : 192.168.0.0
-Mask         : 255.255.255.0
-PrefixLength : 24
-WildCard     : 0.0.0.255
-IPcount      : 256
-Subnet       : 192.168.0.0
-Broadcast    : 192.168.0.255
-CIDR         : 192.168.0.0/24
-ToDecimal    : 3232235520
-IPBin        : 11000000.10101000.00000000.00000000
-MaskBin      : 11111111.11111111.11111111.00000000
-SubnetBin    : 11000000.10101000.00000000.00000000
-BroadcastBin : 11000000.10101000.00000000.11111111
-.EXAMPLE
-Get-IPCalc -IPAddress 192.168.3.0 -PrefixLength 23
-IP           : 192.168.3.0
-Mask         : 255.255.254.0
-PrefixLength : 23
-WildCard     : 0.0.1.255
-IPcount      : 512
-Subnet       : 192.168.2.0
-Broadcast    : 192.168.3.255
-CIDR         : 192.168.2.0/23
-ToDecimal    : 3232236288
-IPBin        : 11000000.10101000.00000011.00000000
-MaskBin      : 11111111.11111111.11111110.00000000
-SubnetBin    : 11000000.10101000.00000010.00000000
-BroadcastBin : 11000000.10101000.00000011.11111111
-.EXAMPLE
-(Get-IPCalc -IPAddress (Get-IPCalc 192.168.99.56/28).Subnet -PrefixLength 32).Add(1).IPAddress
-192.168.99.49
-.EXAMPLE
-(Get-IPCalc 192.168.99.56/28).Compare('192.168.99.50')
-True
-.EXAMPLE
-(Get-IPCalc 192.168.99.58/30).GetIPArray()
-192.168.99.56
-192.168.99.57
-192.168.99.58
-192.168.99.59
-.EXAMPLE
-Get-NetRoute -AddressFamily IPv4 | ? {(Get-IPCalc -CIDR $_.DestinationPrefix).Compare('8.8.8.8')} | Sort-Object -Property @(@{Expression = {$_.DestinationPrefix.Split('/')[1]}; Asc = $false},'RouteMetric','ifMetric')
+    IP Calculator for calculation IP Subnet. Provides comprehensive network information including binary representations, 
+    subnet boundaries, and advanced subnet manipulation methods.
 
-ifIndex DestinationPrefix                              NextHop                                  RouteMetric ifMetric PolicyStore
-------- -----------------                              -------                                  ----------- -------- -----------
-22      0.0.0.0/0                                      192.168.0.1                                        0 25       ActiveStore
+.PARAMETER CIDR
+    Specifies the network in CIDR notation (e.g., "192.168.1.0/24")
 
+.PARAMETER IPAddress
+    Specifies the IP address to analyze
+
+.PARAMETER Mask
+    Specifies the subnet mask (e.g., "255.255.255.0")
+
+.PARAMETER PrefixLength
+    Specifies the network prefix length (0-32)
+
+.PARAMETER WildCard
+    Specifies the wildcard mask
 
 .EXAMPLE
-(Get-IPCalc 0.0.0.0/0).GetLocalRoute('127.0.0.1')
+    Get-IPCalc -CIDR 192.168.0.0/24
 
-ifIndex DestinationPrefix                              NextHop                                  RouteMetric ifMetric PolicyStore
-------- -----------------                              -------                                  ----------- -------- -----------
-1       127.0.0.0/8                                    0.0.0.0                                          256 75       ActiveStore
+    Shows complete subnet information including:
+    IP           : 192.168.0.0
+    Mask         : 255.255.255.0
+    PrefixLength : 24
+    WildCard     : 0.0.0.255
+    IPcount      : 256
+    Subnet       : 192.168.0.0
+    Broadcast    : 192.168.0.255
+    CIDR         : 192.168.0.0/24
+    ToDecimal    : 3232235520
+    IPBin        : 11000000.10101000.00000000.00000000
+    MaskBin      : 11111111.11111111.11111111.00000000
+    SubnetBin    : 11000000.10101000.00000000.00000000
+    BroadcastBin : 11000000.10101000.00000000.11111111
+
 .EXAMPLE
-(Get-IPCalc 0.0.0.0/0).GetLocalRoute('127.0.0.1',2)
+    Get-IPCalc -IPAddress 192.168.3.0 -PrefixLength 23
 
-ifIndex DestinationPrefix                              NextHop                                  RouteMetric ifMetric PolicyStore
-------- -----------------                              -------                                  ----------- -------- -----------
-1       127.0.0.1/32                                   0.0.0.0                                          256 75       ActiveStore
-1       127.0.0.0/8                                    0.0.0.0                                          256 75       ActiveStore
+    Demonstrates calculation with IP address and prefix length, showing a larger subnet (512 IPs)
 
 .EXAMPLE
-(Get-IPCalc 192.168.0.0/25).Overlaps('192.168.0.0/27')
-True
+    (Get-IPCalc 192.168.99.58/30).GetIPArray()
+    
+    Returns all IP addresses in the specified subnet:
+    192.168.99.56
+    192.168.99.57
+    192.168.99.58
+    192.168.99.59
 
+.EXAMPLE
+    (Get-IPCalc 192.168.99.56/28).Compare('192.168.99.50')
+    
+    Demonstrates the Compare method to check if an IP belongs to a subnet
+
+.EXAMPLE
+    (Get-IPCalc 192.168.0.0/25).Overlaps('192.168.0.0/27')
+    
+    Shows how to check for overlapping subnets
+
+.NOTES
+    Advanced Methods Available:
+    - Add(): Add IP addresses within the subnet
+    - Compare(): Compare IP addresses within the subnet
+    - Overlaps(): Check for overlapping subnets
+    - GetIParray(): Get all IP addresses in the range
+    - isLocal(): Check if IP is on local network
+    - GetLocalRoute(): Get routing information for specific IPs
 #>
+
+
+Function Get-IPCalc {
+    
     [CmdletBinding(DefaultParameterSetName = 'CIDR')]
     param(
         [Parameter(Mandatory = $true, ParameterSetName = 'CIDR', ValueFromPipelineByPropertyName = $true, Position = 0)]

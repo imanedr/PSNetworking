@@ -1,6 +1,4 @@
-function Ping-Ip
-{
-    <#
+<#
     .SYNOPSIS
 The Ping-Ip function pings a specified computer name or IP address to test the network connection and provides detailed information on the response status.
 
@@ -46,6 +44,8 @@ The Ping-Ip function returns information about the network response to the ping 
 Use the Ping-Ip function to test the connectivity of a network and diagnose any potential issues.```
 
     #>
+function Ping-Ip
+{
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]

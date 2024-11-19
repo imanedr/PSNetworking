@@ -39,8 +39,12 @@
     The formatted MAC address in the alternate format.
 
 .NOTES
-    Author: Your Name
-    Date:   2023-09-04
+    Author: Iman Edrisian
+    Version: 1.0.0
+    Requires: PowerShell 5.1 or higher
+
+.LINK
+    https://github.com/imanedr/psnetworking
 #>
 function Convert-MacAddressFormat {
     [CmdletBinding()]
