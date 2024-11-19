@@ -7,7 +7,7 @@ function Convert-IpToSubnets
         [switch]$NotUseCIDRfor32
     )
 
-    # This array contains all possible subnet masks
+    # This array contains all possible subnet masks.
     $bitMask = @('0.0.0.0',
         '128.0.0.0',
         '192.0.0.0',
