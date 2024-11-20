@@ -1,16 +1,26 @@
 # PSNetworking PowerShell Module
 
-A comprehensive PowerShell networking toolkit for network administrators and IT professionals.
+A PowerShell networking toolkit for network administrators and IT professionals.
 
 ## 🚀 Overview
 
-PSNetworking is a powerful PowerShell module that provides a collection of networking utilities for IP address management, network diagnostics, and network information retrieval.
+PSNetworking is a PowerShell module that provides a comprehensive collection of networking utilities designed to simplify network administration tasks. The module delivers essential tools across key areas:
+
+- **IP Address Management**: Subnet calculations, IP validation, and range operations
+- **Network Diagnostics**: Advanced ping utilities and parallel network testing
+- **Network Information**: Interface configuration and public IP monitoring
+- **MAC Address Operations**: Format conversion and vendor identification
+
+Perfect for network administrators, system engineers, and IT professionals, this module streamlines network operations with powerful automation capabilities and enhanced network visibility. Built for performance and ease of use.
 
 ## 📦 Installation
 
+For optimal performance, use PowerShell 7 or later. Get the latest version here:
+[Install PowerShell](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-windows)
+
 ```powershell
-# Install from PowerShell Gallery (coming soon)
-Install-Module -Name PSNetworking
+# Install from PowerShell Gallery
+Install-Module -Name PSNetworking -Scope CurrentUser
 ```
 
 ## 🛠 Functions
