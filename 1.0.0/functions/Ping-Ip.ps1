@@ -1,5 +1,5 @@
 <#
-    .SYNOPSIS
+.SYNOPSIS
 The Ping-Ip function pings a specified computer name or IP address to test the network connection and provides detailed information on the response status.
 
 .DESCRIPTION

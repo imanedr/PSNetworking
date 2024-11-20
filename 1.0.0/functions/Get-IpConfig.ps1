@@ -31,7 +31,6 @@ Administrator rights may be required for some network operations
 .LINK
 https://github.com/imanedr/psnetworking
 #>
-
 function Get-IpConfig
 {
    
