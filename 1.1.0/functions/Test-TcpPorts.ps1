@@ -1,36 +1,66 @@
 <#
 .SYNOPSIS
-    Determines if one subnet is fully contained within another subnet.
+    Tests connectivity to specified TCP ports on target hosts.
 
 .DESCRIPTION
-    The Test-SubnetInSubnet function checks whether a given subnet (FirstSubnet) is completely contained within another subnet (SecondSubnet). 
-    It validates both inputs are in CIDR notation and returns true if the first subnet is fully contained within the second subnet.
+    This function allows you to test connectivity to TCP ports for a list of target hosts.
+    You can specify a single port, a range of ports, or use a list of 100 or 1000 most common TCP ports.
+    The function can receive target inputs and port numbers via the pipeline and can also use the clipboard
+    for target input. Results can be sorted or filtered to show only open ports.
 
-.PARAMETER FirstSubnet
-    The subnet to check if it's contained within the SecondSubnet. Must be in CIDR notation (e.g. 192.168.1.0/24).
+.PARAMETER Targets
+    Target hosts (IP addresses or domain names) that need to be tested.
+    This parameter can receive input from the pipeline.
 
-.PARAMETER SecondSubnet
-    The potential containing subnet. Must be in CIDR notation (e.g. 192.168.0.0/16).
+.PARAMETER UseClipboardInput
+    If specified, it uses clipboard contents as target input.
+
+.PARAMETER PortNumber
+    A single port number to test, validated to be in the range of 1 to 65535.
+
+.PARAMETER PortRange
+    A range of ports to test, specified in "startPort-endPort" format, validated to ensure range is correct.
+
+.PARAMETER Timeout
+    Timeout for connections, default is 1000 milliseconds.
+
+.PARAMETER UseCommon100Ports
+    If specified, test against the 100 most common TCP ports.
+
+.PARAMETER UseCommon1000Ports
+    If specified, test against the 1000 most common TCP ports.
+
+.PARAMETER SortResults
+    If specified, results will be sorted by IP address.
+
+.PARAMETER OnlyShowOpenPorts
+    If specified, only open ports will be displayed in the output.
+
+.PARAMETER MaxThreads
+    Maximum number of concurrent threads.
+
+.PARAMETER FilePath
+    File path for the ports database. Defaults to a CSV file named `ports.csv` in the script's directory.
 
 .EXAMPLE
-    Test-SubnetInSubnet -FirstSubnet "192.168.1.0/24" -SecondSubnet "192.168.0.0/16"
-    Returns: True (because 192.168.1.0/24 is contained within 192.168.0.0/16)
+    Test-TcpPorts -Targets '192.168.1.1' -PortNumber 80
+    Tests connectivity on port 80 for the IP address 192.168.1.1.
 
 .EXAMPLE
-    Test-SubnetInSubnet -FirstSubnet "10.0.0.0/8" -SecondSubnet "192.168.0.0/16"
-    Returns: False (because 10.0.0.0/8 is not contained within 192.168.0.0/16)
+    '192.168.1.1', '192.168.1.2' | Test-TcpPorts -UseCommon100Ports
+    Tests connectivity on the 100 most common TCP ports for the given IP addresses.
+
+.EXAMPLE
+    Test-TcpPorts -Targets '192.168.1.1/24' -PortRange '80-85' -OnlyShowOpenPorts -SortResults
+    Tests connectivity on ports 80 to 85 within the given subnet, sorts the results, and shows only open ports.
+
+.EXAMPLE
+    Test-TcpPorts -UseClipboardInput -UseCommon1000Ports
+    Uses clipboard contents as target IP addresses or hostnames and tests the most common 1000 TCP ports.
 
 .NOTES
-    File Name      : Test-SubnetInSubnet.ps1
-    Prerequisite   : PowerShell 5.1 or higher
-    Copyright      : MIT License
+    Ensure the port description database CSV file exists at the specified file path.
 
-.LINK
-    https://github.com/imanedr/psnetworking
-
-.OUTPUTS
-    System.Boolean
-    Returns True if FirstSubnet is contained within SecondSubnet, False otherwise.
 #>
 function Test-TcpPorts {
     [CmdletBinding()]
