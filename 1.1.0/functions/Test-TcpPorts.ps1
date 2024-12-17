@@ -33,9 +33,6 @@
 .PARAMETER SortResults
     If specified, results will be sorted by IP address.
 
-.PARAMETER OnlyShowOpenPorts
-    If specified, only open ports will be displayed in the output.
-
 .PARAMETER MaxThreads
     Maximum number of concurrent threads.
 
@@ -97,7 +94,6 @@ function Test-TcpPorts {
         [switch]$UseCommon100Ports,
         [switch]$UseCommon1000Ports,
         [switch]$SortResults,
-        [switch]$OnlyShowOpenPorts,
         [switch]$ResolveDNS,
         [int]$MaxThreads = 100,
         [string]$filePath = "$PSScriptRoot\ports.csv"
@@ -176,7 +172,7 @@ function Test-TcpPorts {
             if ($Targets[$i] -match "\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}") {
                 $NameHost = (Resolve-DnsName $Targets[$i] -Type PTR -DnsOnly -ErrorAction SilentlyContinue).NameHost
                 if ($NameHost) { 
-                    if ($NameHost.Count -gt 1) {$ipList[$i] = $NameHost[0]} else { $Targets[$i] = $NameHost }
+                    if ($NameHost.Count -gt 1) { $ipList[$i] = $NameHost[0] } else { $Targets[$i] = $NameHost }
                 }
             }
         }
@@ -252,15 +248,10 @@ function Test-TcpPorts {
         $runspace.Pipe.Dispose()
 
         # Add results based on filter settings
-        if ($OnlyShowOpenPorts) {
-            if ($result.Status -eq "Open") {
-                $resultArray.Add(($result | Select-Object Hostname, @{Name = "Service"; Expression = { $portsDB | Where-Object { $_.port -eq $result.Port } | Select-Object -ExpandProperty Name } }, Port, Status)) | Out-Null
-            }
-        }
-        else {
+        if ($result.Status -eq "Open") {
             $resultArray.Add(($result | Select-Object Hostname, @{Name = "Service"; Expression = { $portsDB | Where-Object { $_.port -eq $result.Port } | Select-Object -ExpandProperty Name } }, Port, Status)) | Out-Null
         }
-
+    
         # Update progress bar
         $completedCount++
         $percent = ($completedCount / $totalCount) * 100
@@ -270,5 +261,10 @@ function Test-TcpPorts {
     # Clean up resources
     $pool.Close()
     $pool.Dispose()
-    return $resultArray
+    if ($resultArray.Count -eq 0) {
+        Write-Host -ForegroundColor Yellow "No open ports found."
+    }
+    else {
+        return $resultArray
+    }
 }
