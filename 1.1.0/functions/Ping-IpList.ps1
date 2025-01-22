@@ -295,7 +295,7 @@ function Ping-IpList {
             if (-not $OutToPipe) {
             if ($ShowHistory) {
                 Clear-Host
-                Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), Ping sequnce: $($iCount + 1)"
+                Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), Ping sequence: $($iCount + 1)"
                 foreach ($item in $pingHistory.Values) {
                     # $paddingSize = 20 - $item.IPAddress.length
                     # if ($paddingSize -lt 0) { $paddingSize = 0 }
