@@ -68,7 +68,7 @@
     Ping-IpList -FromClipBoard -ShowHistory
 
     Output:
-    2024-11-19 14:01:24, Ping sequnce: 1
+    2024-11-19 14:01:24, Ping sequence: 1
     192.168.1.10 [t:1ms DownFor:0s]:!
     8.8.8.8     [t:27ms DownFor:0s]:!
     1.1.1.1     [t:18ms DownFor:0s]:!
@@ -90,7 +90,7 @@
     Ping-IpList -range "192.168.1.1-192.168.1.10" -Continuous -ShowHistory
 
     Output:
-    2024-11-19 13:57:24, Ping sequnce: 7
+    2024-11-19 13:57:24, Ping sequence: 7
     192.168.1.1 [t:1ms DownFor:0s]:!!!!!!!
     192.168.1.2 [t:-ms DownFor:9s]:.......
     192.168.1.3 [t:-ms DownFor:9s]:.......
@@ -100,7 +100,7 @@
     Ping-IpList -cidr "10.0.0.0/29" -ResolveDNS
 
     Output:
-    2024-11-19 13:58:09, Ping sequnce: 4
+    2024-11-19 13:58:09, Ping sequence: 4
     IPAddress           ResponsTime Result   DownTime
     ---------          ----------- ------   --------
     10.0.0.0           -           TimedOut     4.49
@@ -318,11 +318,11 @@ function Ping-IpList {
             }
             else {
                 Clear-Host
-                Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), Ping sequnce: $($iCount + 1)"
+                Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), Ping sequence: $($iCount + 1)"
                 Write-Output -InputObject $pingHistory.Values | Select-Object IPAddress, ResponsTime, Result, DownTime | Format-Table -RepeatHeader -AutoSize
             }
         }else{
-            Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), Ping sequnce: $($iCount + 1)"
+            Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), Ping sequence: $($iCount + 1)"
             if ($iCount -eq ($Count - 1)) {
                 Write-Output -InputObject $pingHistory.Values | Select-Object IPAddress, ResponsTime, Result, ResultHistory, DownTime
             }
