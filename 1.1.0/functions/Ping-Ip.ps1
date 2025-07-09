@@ -29,6 +29,9 @@ A switch parameter that indicates whether to send an infinite number of pings.
 .PARAMETER Short
 A switch parameter that make the output shorter.
 
+.PARAMETER OutToPipe
+A switch parameter. When specified, the function outputs objects to the pipeline instead of formatted text, making it easier to use the results in scripts or further processing.
+
 .EXAMPLE
 PS C:\> Ping-Ip -ComputerName "www.google.com"
 Pings the www.google.com server and returns the results of the ping.
@@ -44,8 +47,7 @@ The Ping-Ip function returns information about the network response to the ping 
 Use the Ping-Ip function to test the connectivity of a network and diagnose any potential issues.```
 
     #>
-function Ping-Ip
-{
+function Ping-Ip {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
@@ -56,7 +58,8 @@ function Ping-Ip
         [int]$Ttl = 128,
         [int]$Timeout = 5000,
         [switch]$Continuous,
-        [switch]$Short
+        [switch]$Short,
+        [switch]$OutToPipe
     )
     $pingStatistics = @{
         Sent     = 0
@@ -67,73 +70,75 @@ function Ping-Ip
         Average  = 0.0
     }
 
-    try
-    {
+    try {
         if ($Continuous) { $Count = -1 }
         $iCount = 0
-        "Pinging $ComputerName with $BufferSize bytes of data:"
-        while ($iCount -ne $Count)
-        {
+        if (-not $OutToPipe) {
+            "Pinging $ComputerName with $BufferSize bytes of data:"
+        }
+        while ($iCount -ne $Count) {
             Write-Verbose "Testing network connection to $ComputerName..."
             $ping = New-Object System.Net.NetworkInformation.Ping
             $pingOptions = New-Object System.Net.NetworkInformation.PingOptions($Ttl, $DontFragment)
             $pingResult = $ping.Send($ComputerName, $Timeout, [System.Text.Encoding]::ASCII.GetBytes(("a" * $BufferSize)), $pingOptions)
 
-            if ($pingResult.Status -eq "Success")
-            {
+            if ($pingResult.Status -eq "Success") {
                 $pingStatistics.Sent++
                 $pingStatistics.Received++
                 $pingStatistics.Minimum = [Math]::Min($pingStatistics.Minimum, $pingResult.RoundtripTime)
                 $pingStatistics.Maximum = [Math]::Max($pingStatistics.Maximum, $pingResult.RoundtripTime)
                 $pingStatistics.Average = ($pingStatistics.Average * ($pingStatistics.Received - 1) + $pingResult.RoundtripTime) / $pingStatistics.Received
-                if (-not $short)
-                {
+
+                if ($OutToPipe) {
+                    Write-Output ([PSCustomObject]@{
+                            IPAddress    = $pingResult.Address.ToString()
+                            ResponseTime = $pingResult.RoundtripTime
+                            Result       = $pingResult.Status
+                        })
+                }
+                elseif (-not $Short) {
                     Write-Output "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') Reply from $($pingResult.Address): seq=$($iCount + 1) bytes=$BufferSize time=$($pingResult.RoundtripTime)ms TTL=$($pingResult.Options.Ttl)"
                 }
-                else
-                {
+                else {
                     Write-Output "Reply $($pingResult.Address): S=$($iCount + 1) B=$BufferSize T=$($pingResult.RoundtripTime)ms TTL=$($pingResult.Options.Ttl)"
                 }
             }
-            else
-            {
+            else {
                 $pingStatistics.Sent++
                 $pingStatistics.Lost++
-                #Write-Host -ForegroundColor Red "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') Pinging $ComputerName [$($pingResult.Address)] with $BufferSize bytes of data: Request timed out."
-                
-                switch ($pingResult.Status)
-                {
-                    'DestinationNetworkUnreachable'
-                    {
-                        Write-Host -ForegroundColor Red "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') Reply from $($pingResult.Address): seq=$($iCount + 1) Destination network unreachable."
-                    }
-                    'DestinationHostUnreachable'
-                    {
-                        Write-Host -ForegroundColor Red "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') Reply from $($pingResult.Address): seq=$($iCount + 1) Destination host unreachable."
-                    }
-                    'DestinationProtocolUnreachable'
-                    {
-                        Write-Host -ForegroundColor Red "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') Reply from $($pingResult.Address): seq=$($iCount + 1) Destination protocol unreachable."
-                    }
-                    'DestinationPortUnreachable'
-                    {
-                        Write-Host -ForegroundColor Red "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') Reply from $($pingResult.Address): seq=$($iCount + 1) Destination port unreachable."
-                    }
-                    'NoResponse'
-                    {
-                        Write-Host -ForegroundColor Red "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') Reply from $($pingResult.Address): seq=$($iCount + 1) No response was received."
-                    }
-                    'TimedOut'
-                    {
-                        Write-Host -ForegroundColor Red "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') Reply from $($pingResult.Address): seq=$($iCount + 1) Request timed out."
-                    }
-                    'TtlExpired'
-                    {
-                        Write-Host -ForegroundColor Red "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') Reply from $($pingResult.Address): seq=$($iCount + 1) Time to live exceeded."
-                    }
-                    'Error'
-                    {
-                        Write-Host -ForegroundColor Red "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') Reply from $($pingResult.Address): seq=$($iCount + 1) An error occurred during the ping operation."
+                if ($OutToPipe) {
+                    Write-Output ([PSCustomObject]@{
+                            IPAddress    = $pingResult.Address.ToString()
+                            ResponseTime = $null
+                            Result       = $pingResult.Status
+                        })
+                }
+                else {
+                    switch ($pingResult.Status) {
+                        'DestinationNetworkUnreachable' {
+                            Write-Host -ForegroundColor Red "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') Reply from $($pingResult.Address): seq=$($iCount + 1) Destination network unreachable."
+                        }
+                        'DestinationHostUnreachable' {
+                            Write-Host -ForegroundColor Red "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') Reply from $($pingResult.Address): seq=$($iCount + 1) Destination host unreachable."
+                        }
+                        'DestinationProtocolUnreachable' {
+                            Write-Host -ForegroundColor Red "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') Reply from $($pingResult.Address): seq=$($iCount + 1) Destination protocol unreachable."
+                        }
+                        'DestinationPortUnreachable' {
+                            Write-Host -ForegroundColor Red "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') Reply from $($pingResult.Address): seq=$($iCount + 1) Destination port unreachable."
+                        }
+                        'NoResponse' {
+                            Write-Host -ForegroundColor Red "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') Reply from $($pingResult.Address): seq=$($iCount + 1) No response was received."
+                        }
+                        'TimedOut' {
+                            Write-Host -ForegroundColor Red "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') Reply from $($pingResult.Address): seq=$($iCount + 1) Request timed out."
+                        }
+                        'TtlExpired' {
+                            Write-Host -ForegroundColor Red "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') Reply from $($pingResult.Address): seq=$($iCount + 1) Time to live exceeded."
+                        }
+                        'Error' {
+                            Write-Host -ForegroundColor Red "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') Reply from $($pingResult.Address): seq=$($iCount + 1) An error occurred during the ping operation."
+                        }
                     }
                 }
             }
@@ -141,10 +146,8 @@ function Ping-Ip
             $iCount++
         }
     }
-    finally
-    {
-        if ($ping)
-        {
+    finally {
+        if ($ping -and -not $OutToPipe) {
             Write-Host -ForegroundColor Cyan "Ping statistics for $($computerName):
         Packets: Sent = $($pingStatistics.Sent), Received = $($pingStatistics.Received), Lost = $($pingStatistics.Lost) ($([Math]::Round(($pingStatistics.Lost / $pingStatistics.Sent) * 100, 2))% loss),
 Approximate round trip times in milli-seconds:
