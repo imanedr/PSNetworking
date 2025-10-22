@@ -1,8 +1,8 @@
-<#
-.SYNOPSIS
+ <#
+    .SYNOPSIS
     Advanced parallel ping utility for multiple IP addresses with history tracking and statistics.
 
-.DESCRIPTION
+    .DESCRIPTION
     Ping-IpList provides powerful network connectivity testing capabilities with features like:
     - Parallel ping execution for multiple targets
     - Continuous monitoring mode
@@ -12,55 +12,58 @@
     - Support for IP ranges and CIDR notation
     - Downtime tracking
 
-.PARAMETER FromClipBoard
-    Reads IP addresses from clipboard
+    .PARAMETER FromClipBoard
+    Reads IP addresses from clipboard.
 
-.PARAMETER ipList
-    Array of IP addresses or hostnames to ping
+    .PARAMETER ipList
+    Array of IP addresses or hostnames to ping.
 
-.PARAMETER range
-    IP address range in format "192.168.1.1-192.168.1.254"
+    .PARAMETER range
+    IP address range in format "192.168.1.1-192.168.1.254".
 
-.PARAMETER cidr
-    CIDR notation subnet like "192.168.1.0/24"
+    .PARAMETER cidr
+    CIDR notation subnet like "192.168.1.0/24".
 
-.PARAMETER Count
-    Number of ping attempts (default: 4, use -Continuous for endless)
+    .PARAMETER Count
+    Number of ping attempts (default: 4, use -Continuous for endless).
 
-.PARAMETER BufferSize
-    Size of ping packet in bytes (default: 32)
+    .PARAMETER BufferSize
+    Size of ping packet in bytes (default: 32).
 
-.PARAMETER DontFragment
-    Sets the Don't Fragment flag in ping packet
+    .PARAMETER DontFragment
+    Sets the Don't Fragment flag in ping packet.
 
-.PARAMETER Ttl
-    Time to live value (default: 128)
+    .PARAMETER Ttl
+    Time to live value (default: 128).
 
-.PARAMETER Timeout
-    Ping timeout in milliseconds (default: 100)
+    .PARAMETER Timeout
+    Ping timeout in milliseconds (default: 100).
 
-.PARAMETER Continuous
-    Enables continuous ping mode
+    .PARAMETER Continuous
+    Enables continuous ping mode.
 
-.PARAMETER ResolveDNS
-    Resolves IP addresses to hostnames
+    .PARAMETER ResolveDNS
+    Resolves IP addresses to hostnames.
 
-.PARAMETER ShowHistory
-    Displays ping history using symbols (! for success, . for failure)
+    .PARAMETER ShowHistory
+    Displays ping history using symbols (! for success, . for failure).
 
-.PARAMETER HistoryResetCount
-    Number of results to keep in history before reset (default: 100)
+    .PARAMETER HistoryResetCount
+    Number of results to keep in history before reset (default: 100).
 
-.PARAMETER DontSortIpList
-    Prevents automatic IP address sorting
+    .PARAMETER DontSortIpList
+    Prevents automatic IP address sorting.
 
-.PARAMETER MaxThreads
-    Maximum number of concurrent ping threads (default: 100)
+    .PARAMETER MaxThreads
+    Maximum number of concurrent ping threads (default: 100).
 
-.PARAMETER OutToPipe
-    Outputs results to pipeline instead of console
+    .PARAMETER OutToPipe
+    Outputs results to pipeline instead of console.
 
-.EXAMPLE
+    .PARAMETER logEvents
+    Logs events related to downtime and uptime.
+
+    .EXAMPLE
     # Copy these IPs to your clipboard:
     # 192.168.1.10
     # 8.8.8.8
@@ -76,8 +79,7 @@
     This example shows how to quickly ping multiple IPs by copying them from any source (text file, Excel, web page).
     Just ensure each IP is on a new line before copying.
 
-
-.EXAMPLE
+    .EXAMPLE
     Ping-IpList -ipList "8.8.8.8","1.1.1.1" -Count 10
 
     Output:
@@ -86,7 +88,7 @@
     1.1.1.1            18 Success
     8.8.8.8            27 Success
 
-.EXAMPLE
+    .EXAMPLE
     Ping-IpList -range "192.168.1.1-192.168.1.10" -Continuous -ShowHistory
 
     Output:
@@ -96,7 +98,7 @@
     192.168.1.3 [t:-ms DownFor:9s]:.......
     [...]
 
-.EXAMPLE
+    .EXAMPLE
     Ping-IpList -cidr "10.0.0.0/29" -ResolveDNS
 
     Output:
@@ -109,11 +111,12 @@
     host3.example.com   1           Success
     [...]
 
-.NOTES
-    Author: PSNetworking Toolkit
+    .NOTES
+    Author: Iman Edrisian
+    Date: October 2025
     Requires: PowerShell 5.1 or higher
     Tags: Network, Monitoring, Ping
-#>
+    #>
 function Ping-IpList {
    
     [CmdletBinding()]
@@ -141,7 +144,8 @@ function Ping-IpList {
         [int]$HistoryResetCount = 100,
         [switch]$DontSortIpList,
         [int]$MaxThreads = 100,
-        [switch]$OutToPipe
+        [switch]$OutToPipe,
+        [switch]$logEvents
     )
    
     if ($range) {
@@ -286,9 +290,11 @@ function Ping-IpList {
                     }
                     else {
                         $item.DownTimeStart = $timeStamp
+                        if ($logEvents) { Write-Log -Message "$($item.IPAddress) went down" -Level Warning -fileNamePrefix "Ping-IpList" }
                     }
                 }
                 else {
+                    if ($logEvents -and $item.DownTimeStart) { Write-Log -Message "$($item.IPAddress) is back online" -Level Info -fileNamePrefix "Ping-IpList" }
                     $item.DownTimeStart = $null
                 }
             }
@@ -298,7 +304,7 @@ function Ping-IpList {
                 $totalCount = $pingHistory.Values.Count
                 $color = if ($successCount -eq $totalCount) { 'Green' } elseif ($successCount -eq 0) { 'Red' } else { 'Yellow' }
                 Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), Ping sequence: $($iCount + 1), Responding hosts: " -NoNewline
-                    Write-Host "$successCount/$totalCount" -ForegroundColor $color
+                Write-Host "$successCount/$totalCount" -ForegroundColor $color
                 if ($ShowHistory) {
                     foreach ($item in $pingHistory.Values) {
                         # $paddingSize = 20 - $item.IPAddress.length
