@@ -6,13 +6,49 @@ A comprehensive PowerShell networking toolkit for network administrators and IT 
 
 PSNetworking is a feature-rich PowerShell module that provides an extensive collection of networking utilities designed to simplify and automate network administration tasks. The module delivers powerful tools across all essential networking domains:
 
-- **IP Address Management**: Advanced subnet calculations, IP validation, range operations, and CIDR manipulation
 - **Network Diagnostics**: Parallel ping utilities with history tracking, TCP port scanning, and downtime monitoring
+- **IP Address Management**: Advanced subnet calculations, IP validation, range operations, and CIDR manipulation
 - **Network Monitoring**: Real-time bandwidth usage, public IP tracking, and interface configuration
 - **MAC Address Operations**: Format conversion, vendor identification via OUI lookup
 - **Advanced Utilities**: Subnet containment testing, virtual MAC generation, and syslog messaging
 
 Perfect for network administrators, system engineers, DevOps professionals, and IT specialists who need reliable automation tools and enhanced network visibility.
+
+## 📑 Table of Contents
+
+- [Installation](#-installation)
+- [Function Reference](#-function-reference)
+  - **Network Diagnostics**
+    - [Ping-Ip](#ping-ip) - Advanced ping utility with statistics
+    - [Ping-IpList](#ping-iplist) - ⭐ Parallel ping with history tracking
+    - [Test-TcpPorts](#test-tcpports) - TCP port connectivity testing
+  - **IP Address Management**
+    - [Convert-IpListToSubnets](#convert-iplisttosubnets) - Convert IPs to efficient subnets
+    - [Get-IPCalc](#get-ipcalc) - Advanced subnet calculator
+    - [Get-NextSubnet](#get-nextsubnet) - Calculate next available subnet
+    - [Get-IPAddressesInSubnet](#get-ipaddressesinsubnet) - List all IPs in subnet
+    - [Get-IpAddressesInRange](#get-ipaddressesinrange) - Generate IP range list
+    - [Sort-IpAddress](#sort-ipaddress) - Sort IP addresses
+    - [Test-IpInSubnet](#test-ipinsubnet) - Validate IP in subnet
+    - [Test-SubnetInSubnet](#test-subnetinsubnet) - Check subnet containment
+    - [Test-IPv4Containment](#test-ipv4containment) - Advanced containment testing
+  - **Network Information & Monitoring**
+    - [Get-IpConfig](#get-ipconfig) - Local interface configuration
+    - [Get-BandwidthUsage](#get-bandwidthusage) - Real-time bandwidth monitoring
+    - [Get-PublicIP](#get-publicip) - Public IP monitoring
+    - [Get-PublicIPWhois](#get-publicipwhois) - Public IP WHOIS lookup
+  - **MAC Address Utilities**
+    - [Convert-MacAddressFormat](#convert-macaddressformat) - MAC format conversion
+    - [Find-OUI](#find-oui) - MAC vendor identification
+    - [Get-VirtualMacAddress](#get-virtualmacaddress) - Generate virtual MAC
+  - **Utility Functions**
+    - [Send-SyslogMessage](#send-syslogmessage) - Send syslog messages
+    - [Write-Log](#write-log) - Structured logging
+- [Common Use Cases & Workflows](#-common-use-cases--workflows)
+- [Advanced Workflows](#-advanced-workflows)
+- [Performance Considerations](#-performance-considerations)
+- [Troubleshooting](#-troubleshooting)
+- [Quick Start Guide](#-quick-start-guide)
 
 ## 📦 Installation
 
@@ -31,6 +67,223 @@ Get-Command -Module PSNetworking
 ```
 
 ## 🛠 Function Reference
+
+### Network Diagnostics
+
+#### Ping-Ip
+Advanced ping utility providing detailed connectivity testing with comprehensive statistics.
+
+**Parameters:**
+- `ComputerName` - Computer name or IP address to ping (mandatory)
+- `Count` - Number of pings (default: 4)
+- `BufferSize` - Packet buffer size in bytes (default: 32)
+- `DontFragment` - Prevent packet fragmentation
+- `Ttl` - Time-to-live value (default: 128)
+- `Timeout` - Response timeout in milliseconds (default: 5000)
+- `Continuous` - Send infinite number of pings
+- `Short` - Shortened output format
+- `OutToPipe` - Output objects to pipeline
+
+**Example:**
+```powershell
+PS> Ping-Ip -ComputerName "www.google.com"
+Pinging www.google.com with 32 bytes of data:
+2024-11-19 14:01:24 Reply from 142.250.80.36: seq=1 bytes=32 time=18ms TTL=56
+2024-11-19 14:01:25 Reply from 142.250.80.36: seq=2 bytes=32 time=17ms TTL=56
+2024-11-19 14:01:26 Reply from 142.250.80.36: seq=3 bytes=32 time=19ms TTL=56
+2024-11-19 14:01:27 Reply from 142.250.80.36: seq=4 bytes=32 time=18ms TTL=56
+
+Ping statistics for www.google.com:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 17ms, Maximum = 19ms, Average = 18ms
+
+# Continuous ping
+PS> Ping-Ip -ComputerName "8.8.8.8" -Continuous
+
+# Short format
+PS> Ping-Ip -ComputerName "8.8.8.8" -Short
+
+# Output to pipeline for further processing
+PS> Ping-Ip -ComputerName "8.8.8.8" -OutToPipe | Where-Object ResponseTime -gt 50
+```
+
+---
+
+#### Ping-IpList
+**★ FEATURED FUNCTION ★**
+
+Advanced parallel ping utility for multiple IP addresses with comprehensive monitoring capabilities including history tracking, downtime monitoring, and event logging.
+
+**Key Features:**
+- ✓ Parallel execution for high performance
+- ✓ Visual ping history with symbols (! = success, . = failure)
+- ✓ Real-time downtime tracking
+- ✓ DNS resolution support
+- ✓ Event logging for downtime/uptime events
+- ✓ Flexible input (clipboard, ranges, CIDR, arrays)
+- ✓ Continuous monitoring mode
+- ✓ Customizable thread pool
+
+**Parameters:**
+- `FromClipBoard` - Read IP addresses from clipboard
+- `ipList` - Array of IP addresses or hostnames
+- `range` - IP address range (e.g., "192.168.1.1-192.168.1.254")
+- `cidr` - CIDR notation subnet (e.g., "192.168.1.0/24")
+- `Count` - Number of ping attempts (default: 4)
+- `BufferSize` - Ping packet size (default: 32)
+- `DontFragment` - Set Don't Fragment flag
+- `Ttl` - Time to live (default: 128)
+- `Timeout` - Timeout in milliseconds (default: 100)
+- `Continuous` - Enable continuous ping mode
+- `ResolveDNS` - Resolve IP addresses to hostnames
+- `ShowHistory` - Display ping history with visual symbols
+- `HistoryResetCount` - History length before reset (default: 100)
+- `DontSortIpList` - Prevent automatic IP sorting
+- `MaxThreads` - Maximum concurrent threads (default: 100)
+- `OutToPipe` - Output results to pipeline
+- `logEvents` - Log downtime/uptime events to file
+
+**Examples:**
+
+**Basic Usage - Ping from Clipboard:**
+```powershell
+# Copy IPs to clipboard, then:
+PS> Ping-IpList -FromClipBoard -ShowHistory -Continuous
+
+2025-10-23 15:26:36, Ping sequence: 27, Responding hosts: 4/4
+1.1.1.1 [t:16ms DownFor:0s]:!!!!!!!!!!!!!!!!!!!!!!!!!!!
+1.1.1.2 [t:16ms DownFor:0s]:!!!!!!!!!!!!!!!!!!!!!!!!!!!
+4.2.2.4 [t:17ms DownFor:0s]:!!!!!!!!!!!!!!!!..!!!!!!!!!
+8.8.8.8 [t:26ms DownFor:0s]:!!!!!!!!!!!!!!!!..!!!!!!!!!
+```
+
+**Understanding the History Display:**
+- `!` = Successful ping
+- `.` = Failed ping/timeout
+- `t:16ms` = Current response time
+- `DownFor:0s` = Total downtime in seconds
+- Visual pattern shows recent ping history from left (oldest) to right (newest)
+
+**Ping Multiple IPs:**
+```powershell
+PS> Ping-IpList -ipList "8.8.8.8","1.1.1.1","4.2.2.4" -Count 10
+
+2024-11-19 13:57:24, Ping sequence: 10, Responding hosts: 3/3
+IPAddress ResponsTime Result  DownTime
+--------- ----------- ------  --------
+1.1.1.1   18          Success 0
+4.2.2.4   27          Success 0
+8.8.8.8   27          Success 0
+```
+
+**Ping IP Range with History:**
+```powershell
+PS> Ping-IpList -range "192.168.1.1-192.168.1.10" -Continuous -ShowHistory
+
+2024-11-19 13:57:24, Ping sequence: 7
+192.168.1.1 [t:1ms DownFor:0s]:!!!!!!!
+192.168.1.2 [t:-ms DownFor:9s]:.......
+192.168.1.3 [t:-ms DownFor:9s]:.......
+192.168.1.4 [t:2ms DownFor:0s]:!!!!!!!
+```
+
+**Ping CIDR Subnet with DNS Resolution:**
+```powershell
+PS> Ping-IpList -cidr "10.0.0.0/29" -ResolveDNS
+
+2024-11-19 13:58:09, Ping sequence: 4
+IPAddress          ResponsTime Result   DownTime
+---------          ----------- ------   --------
+10.0.0.0           -           TimedOut 4.49
+host1.example.com  1           Success  0
+10.0.0.2           1           Success  0
+host3.example.com  1           Success  0
+```
+
+**Event Logging for Downtime Monitoring:**
+```powershell
+PS> Ping-IpList -fromClipBoard -ShowHistory -Continuous -logEvents -Timeout 50
+
+# Creates log file: logs/Ping-IpList_<PID>_<date>.log
+# Log entries show:
+2025-10-23T15:26:26.938-05:00 [WARNING] [testuser@testpc01] 4.2.2.4 went down
+2025-10-23T15:26:26.948-05:00 [WARNING] [testuser@testpc01] 8.8.8.8 went down
+2025-10-23T15:26:28.032-05:00 [INFO] [testuser@testpc01] 4.2.2.4 is back online
+2025-10-23T15:26:28.034-05:00 [INFO] [testuser@testpc01] 8.8.8.8 is back online
+```
+
+**Pipeline Output for Automation:**
+```powershell
+# Get final results for processing
+PS> Ping-IpList -ipList "8.8.8.8","1.1.1.1" -Count 5 -OutToPipe | 
+    Where-Object Result -eq "Success" | 
+    Export-Csv -Path "successful_pings.csv"
+
+# Monitor and alert on downtime
+PS> Ping-IpList -cidr "192.168.1.0/24" -Continuous -OutToPipe | 
+    Where-Object DownTime -gt 30 | 
+    ForEach-Object { Send-MailMessage -To "admin@company.com" -Subject "Alert: $($_.IPAddress) down" }
+```
+
+**Performance Tuning:**
+```powershell
+# Fast scan with short timeout
+PS> Ping-IpList -cidr "10.0.0.0/24" -Timeout 50 -MaxThreads 200
+
+# Conservative scan for slow networks
+PS> Ping-IpList -range "192.168.1.1-192.168.1.254" -Timeout 500 -MaxThreads 50
+```
+
+**Use Cases:**
+- Network health monitoring and uptime tracking
+- Identifying offline hosts in subnets
+- Network documentation and discovery
+- Performance baseline establishment
+- Automated alerting for downtime events
+- Post-maintenance verification
+- Real-time network status dashboards
+
+---
+
+#### Test-TcpPorts
+Tests connectivity to specified TCP ports on target hosts with parallel execution.
+
+**Parameters:**
+- `Targets` - Target hosts (IP addresses or domain names)
+- `UseClipboardInput` - Use clipboard contents as targets
+- `PortNumber` - Single port to test (1-65535)
+- `PortRange` - Port range (e.g., "80-443")
+- `Timeout` - Connection timeout in milliseconds (default: 1000)
+- `UseCommon100Ports` - Test 100 most common ports
+- `UseCommon1000Ports` - Test 1000 most common ports
+- `SortResults` - Sort results by IP address
+- `ResolveDNS` - Resolve IP addresses to hostnames
+- `MaxThreads` - Maximum concurrent threads (default: 100)
+
+**Example:**
+```powershell
+PS> Test-TcpPorts -Targets www.google.com -UseCommon100Ports
+
+Hostname       Service Port Status
+--------       ------- ---- ------
+www.google.com http    80   Open
+www.google.com https   443  Open
+
+# Test specific port
+PS> Test-TcpPorts -Targets "192.168.1.1" -PortNumber 3389
+
+# Test port range on multiple hosts
+PS> Test-TcpPorts -Targets "192.168.1.1","192.168.1.2" -PortRange "20-25"
+
+# Scan entire subnet for web servers
+PS> Test-TcpPorts -Targets "192.168.1.0/24" -PortNumber 80,443
+
+# Use clipboard input
+PS> Test-TcpPorts -UseClipboardInput -UseCommon100Ports
+```
+
+---
 
 ### IP Address Management
 
