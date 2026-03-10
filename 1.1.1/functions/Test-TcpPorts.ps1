@@ -18,6 +18,9 @@
 .PARAMETER PortNumber
     A single port number to test, validated to be in the range of 1 to 65535.
 
+.PARAMETER PortList
+    An array of port numbers to test, each validated to be in the range of 1 to 65535.
+
 .PARAMETER PortRange
     A range of ports to test, specified in "startPort-endPort" format, validated to ensure range is correct.
 
@@ -42,6 +45,10 @@
 .EXAMPLE
     Test-TcpPorts -Targets '192.168.1.1' -PortNumber 80
     Tests connectivity on port 80 for the IP address 192.168.1.1.
+
+.EXAMPLE
+    Test-TcpPorts -Targets '192.168.1.1' -PortList 80,443,3389
+    Tests connectivity on ports 80, 443, and 3389 for the IP address 192.168.1.1.
 
 .EXAMPLE
     '192.168.1.1', '192.168.1.2' | Test-TcpPorts -UseCommon100Ports
@@ -72,6 +79,17 @@ function Test-TcpPorts {
         [int]$PortNumber,
 
         [ValidateScript({
+                if ($_ -eq $null) { return $true }
+                if (($_ | Where-Object { $_ -isnot [int] -or $_ -lt 1 -or $_ -gt 65535 }).Count -eq 0) {
+                    $true
+                }
+                else {
+                    throw "PortList must be an array of integers between 1 and 65535."
+                }
+            })]
+        [int[]]$PortList,
+
+        [ValidateScript({
                 if ($_ -match '^(?:[1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])-(?:[1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$') {
                     $parts = $_ -split '-'
                     $startPort = [int]$parts[0]
@@ -100,8 +118,8 @@ function Test-TcpPorts {
     )
 
     # Validate input parameters and port configurations
-    if (-not $PortNumber -and -not $PortRange -and -not $UseCommon100Ports -and -not $UseCommon1000Ports) {
-        Write-Host -ForegroundColor Red "Please specify a port number or port range using the -PortNumber or -PortRange parameter."
+    if (-not $PortNumber -and -not $PortList -and -not $PortRange -and -not $UseCommon100Ports -and -not $UseCommon1000Ports) {
+        Write-Host -ForegroundColor Red "Please specify a port number, a list of ports, or a port range using the -PortNumber, -PortList, or -PortRange parameter."
         return
     }
 
@@ -117,7 +135,10 @@ function Test-TcpPorts {
     }
 
     # Determine which ports to test based on input parameters
-    $portsToTest = if ($PortNumber) {
+    $portsToTest = if ($PortList) {
+        $PortList
+    }
+    elseif ($PortNumber) {
         $PortNumber
     }
     elseif ($PortRange) {
