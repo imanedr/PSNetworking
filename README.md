@@ -6,7 +6,7 @@ A comprehensive PowerShell networking toolkit for network administrators and IT 
 
 PSNetworking is a feature-rich PowerShell module that provides an extensive collection of networking utilities designed to simplify and automate network administration tasks. The module delivers powerful tools across all essential networking domains:
 
-- **Network Diagnostics**: Parallel ping utilities with history tracking, TCP port scanning, and downtime monitoring
+- **Network Diagnostics**: Parallel ping utilities with history tracking, TCP port scanning, NTP server testing, and downtime monitoring
 - **IP Address Management**: Advanced subnet calculations, IP validation, range operations, and CIDR manipulation
 - **Network Monitoring**: Real-time bandwidth usage, public IP tracking, and interface configuration
 - **MAC Address Operations**: Format conversion, vendor identification via OUI lookup
@@ -22,6 +22,7 @@ Perfect for network administrators, system engineers, DevOps professionals, and 
     - [Ping-Ip](#ping-ip) - Advanced ping utility with statistics
     - [Ping-IpList](#ping-iplist) - ⭐ Parallel ping with history tracking
     - [Test-TcpPorts](#test-tcpports) - TCP port connectivity testing
+    - [Test-NtpServer](#test-ntpserver) - NTP server time synchronization testing
   - **IP Address Management**
     - [Convert-IpListToSubnets](#convert-iplisttosubnets) - Convert IPs to efficient subnets
     - [Get-IPCalc](#get-ipcalc) - Advanced subnet calculator
@@ -282,6 +283,56 @@ PS> Test-TcpPorts -Targets "192.168.1.0/24" -PortNumber 80,443
 # Use clipboard input
 PS> Test-TcpPorts -UseClipboardInput -UseCommon100Ports
 ```
+
+---
+
+#### Test-NtpServer
+Tests one or more NTP servers and returns time synchronization information including server time, clock offset, round-trip delay, and stratum level.
+
+**Parameters:**
+- `Server` - One or more NTP server hostnames or IP addresses (mandatory, pipeline-supported)
+- `Port` - UDP port for NTP queries (default: 123)
+- `Timeout` - Query timeout in milliseconds (default: 3000)
+- `Count` - Number of queries per server for averaging (default: 1)
+
+**Example:**
+```powershell
+PS> Test-NtpServer -Server "pool.ntp.org"
+
+Server      : pool.ntp.org
+Status      : Success
+ServerTime  : 2026-04-14 10:23:45
+OffsetMs    : -12.34
+DelayMs     : 25.67
+Stratum     : 2
+ReferenceId : 192.5.41.40
+
+# Test multiple NTP servers
+PS> Test-NtpServer -Server "0.pool.ntp.org","1.pool.ntp.org","time.windows.com"
+
+# Pipeline input
+PS> "pool.ntp.org","time.cloudflare.com","time.google.com" | Test-NtpServer
+
+# Average over multiple queries
+PS> Test-NtpServer -Server "pool.ntp.org" -Count 5
+
+# Check if offset is within acceptable threshold
+PS> Test-NtpServer -Server "pool.ntp.org" | Where-Object { [Math]::Abs($_.OffsetMs) -gt 500 }
+```
+
+**Output Fields:**
+- `Status` - Success, TimedOut, or Error
+- `ServerTime` - Current time reported by the NTP server (local time)
+- `OffsetMs` - Clock offset in milliseconds (negative = local clock is ahead)
+- `DelayMs` - Round-trip network delay in milliseconds
+- `Stratum` - NTP stratum level (1 = atomic/GPS reference, 2+ = synchronized from higher stratum)
+- `ReferenceId` - Reference clock identifier (ASCII for stratum 1, IPv4 for stratum 2+)
+
+**Use Cases:**
+- Verify NTP servers are reachable and responding
+- Audit clock drift across infrastructure
+- Validate NTP configuration after changes
+- Monitor time synchronization health
 
 ---
 
@@ -854,4 +905,5 @@ PSNetworking/
 │   ├── Ping-Ip.ps1
 │   ├── Ping-IpList.ps1
 │   ├── Send-SyslogMessage.ps1
+│   ├── Test-NtpServer.ps1
 │
