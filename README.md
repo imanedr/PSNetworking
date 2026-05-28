@@ -10,7 +10,7 @@ PSNetworking is a feature-rich PowerShell module that provides an extensive coll
 - **IP Address Management**: Advanced subnet calculations, IP validation, range operations, and CIDR manipulation
 - **Network Monitoring**: Real-time bandwidth usage, public IP tracking, and interface configuration
 - **MAC Address Operations**: Format conversion, vendor identification via OUI lookup
-- **Advanced Utilities**: Subnet containment testing, virtual MAC generation, and syslog messaging
+- **Advanced Utilities**: Subnet containment testing, virtual MAC generation, syslog messaging, and TFTP file transfers
 
 Perfect for network administrators, system engineers, DevOps professionals, and IT specialists who need reliable automation tools and enhanced network visibility.
 
@@ -45,6 +45,7 @@ Perfect for network administrators, system engineers, DevOps professionals, and 
   - **Utility Functions**
     - [Send-SyslogMessage](#send-syslogmessage) - Send syslog messages
     - [Write-Log](#write-log) - Structured logging
+    - [Invoke-TFTP](#invoke-tftp) - Native TFTP file upload and download
 - [Common Use Cases & Workflows](#-common-use-cases--workflows)
 - [Advanced Workflows](#-advanced-workflows)
 - [Performance Considerations](#-performance-considerations)
@@ -771,6 +772,64 @@ PS> Write-Log -Message "Error occurred" -Level Error -Json
 
 ---
 
+#### Invoke-TFTP
+Native PowerShell TFTP client for uploading and downloading files without requiring `tftp.exe` or any external executables. Implements RFC 1350 with RFC 2347/2348 option extensions (block size, window size). Displays a real-time curl-style progress bar during transfers.
+
+**Parameters:**
+- `Server` - Hostname or IP address of the TFTP server (mandatory)
+- `RemoteFile` - File path as it appears on the server side (mandatory)
+- `LocalFile` - Local path to read from (Upload) or write to (Download)
+- `Operation` - `'Download'` (default) or `'Upload'`
+- `Port` - UDP port on the server (default: 69)
+- `Mode` - Transfer mode: `'octet'` (binary, default) or `'netascii'`
+- `BlockSize` - Payload bytes per DATA packet, RFC 2348 (range 8–65464, default: 512)
+- `TimeoutSeconds` - Per-packet timeout in seconds (default: 5)
+- `Retries` - Retransmit attempts before giving up (default: 5)
+- `WindowSize` - Unacknowledged blocks in flight, RFC 7440 (default: 1 — stop-and-wait)
+- `PassThru` - Download: return `[byte[]]` instead of writing a file; Upload: accept `[byte[]]` from pipeline
+
+**Examples:**
+
+```powershell
+# Upload a file
+PS> Invoke-TFTP -Server 192.168.1.1 -RemoteFile 'Configs/router.cfg' -LocalFile 'C:\backup\router.cfg' -Operation Upload
+
+  Upload:    Configs/router.cfg
+  Server:    192.168.1.1:69
+  Local:     C:\backup\router.cfg
+
+  Upload     45.0 KiB / 45.0 KiB   [####################]  100%      1.2 MiB/s  ETA 00:00:00
+  Upload complete.  45.0 KiB in 00:00:00  (1.2 MiB/s)
+
+# Download a file
+PS> Invoke-TFTP -Server 192.168.1.1 -RemoteFile 'firmware.bin' -LocalFile 'C:\firmware\firmware.bin'
+
+# Upload with larger block size for faster transfers on reliable links
+PS> Invoke-TFTP -Server 192.168.1.1 -RemoteFile 'backup.cfg' -LocalFile '.\backup.cfg' -Operation Upload -BlockSize 1468
+
+# Download to a variable (PassThru)
+PS> $bytes = Invoke-TFTP -Server 192.168.1.1 -RemoteFile 'config.txt' -PassThru
+
+# Verbose output shows per-block detail for troubleshooting
+PS> Invoke-TFTP -Server 192.168.1.1 -RemoteFile 'test.txt' -LocalFile '.\test.txt' -Operation Upload -Verbose
+```
+
+**Features:**
+- No external dependencies — pure PowerShell sockets (no `tftp.exe`)
+- Real-time progress bar with transfer size, speed, and ETA
+- Automatic retransmit with configurable timeout and retry count
+- ACK validation with window rollback on mismatch
+- RFC 2348 block size negotiation for faster large-file transfers
+- RFC 7440 window size support for high-latency links
+- `-Verbose` flag exposes per-block and per-window trace for troubleshooting
+
+**Use Cases:**
+- Uploading firmware or configuration files to network devices (routers, switches, out-of-band managers)
+- Downloading running configs for backup
+- Automating device provisioning workflows via TFTP
+
+---
+
 ## 🔥 Common Use Cases & Workflows
 
 ### Network Discovery and Documentation
@@ -906,4 +965,5 @@ PSNetworking/
 │   ├── Ping-IpList.ps1
 │   ├── Send-SyslogMessage.ps1
 │   ├── Test-NtpServer.ps1
+│   ├── Invoke-TFTP.ps1
 │
