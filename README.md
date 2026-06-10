@@ -25,6 +25,7 @@ Perfect for network administrators, system engineers, DevOps professionals, and 
     - [Test-NtpServer](#test-ntpserver) - NTP server time synchronization testing
   - **IP Address Management**
     - [Convert-IpListToSubnets](#convert-iplisttosubnets) - Convert IPs to efficient subnets
+    - [Convert-IpListToRanges](#convert-iplisttoranges) - Convert IPs to contiguous ranges
     - [Get-IPCalc](#get-ipcalc) - Advanced subnet calculator
     - [Get-NextSubnet](#get-nextsubnet) - Calculate next available subnet
     - [Get-IPAddressesInSubnet](#get-ipaddressesinsubnet) - List all IPs in subnet
@@ -357,6 +358,39 @@ PS> Convert-IpListToSubnets -IPAddressList @("192.168.1.1", "192.168.1.2", "192.
 - Consolidating IP addresses into efficient subnet ranges
 - Network documentation and IP address management
 - Firewall rule optimization
+
+---
+
+#### Convert-IpListToRanges
+Converts a list of IP addresses into contiguous IP ranges. Consecutive addresses are collapsed into
+`startIP-endIP` notation; isolated addresses are returned as plain IPs. Duplicates are automatically
+removed and the input is sorted before processing.
+
+**Parameters:**
+- `IPAddressList` - Array of IPv4 addresses to convert
+
+**Example:**
+```powershell
+PS> Convert-IpListToRanges -IPAddressList @("192.168.1.1","192.168.1.2","192.168.1.3","192.168.1.5")
+192.168.1.1-192.168.1.3
+192.168.1.5
+
+PS> Convert-IpListToRanges -IPAddressList @("10.0.0.1","10.0.0.2","10.0.0.3","10.0.0.4")
+10.0.0.1-10.0.0.4
+
+# Combine with file input
+PS> Convert-IpListToRanges -IPAddressList (Get-Content "ip_addresses.txt")
+
+# Pipeline into other functions
+PS> Convert-IpListToRanges -IPAddressList $ipList | ForEach-Object {
+        Write-Host "Range: $_"
+    }
+```
+
+**Use Cases:**
+- Generating ACL or firewall rules from an IP address inventory
+- Summarizing scan results or DHCP lease lists into compact ranges
+- Creating human-readable IP range reports for documentation
 
 ---
 
@@ -950,6 +984,7 @@ PSNetworking/
 ├── PSNetworking.psm1          # Module entry point
 ├── functions/                  # Function definitions
 │   ├── Convert-IpListToSubnets.ps1
+│   ├── Convert-IpListToRanges.ps1
 │   ├── Convert-MacFormat.ps1
 │   ├── Find-OUI.ps1
 │   ├── Get-BandwidthUsage.ps1
