@@ -6,7 +6,7 @@ A comprehensive PowerShell networking toolkit for network administrators and IT 
 
 PSNetworking is a feature-rich PowerShell module that provides an extensive collection of networking utilities designed to simplify and automate network administration tasks. The module delivers powerful tools across all essential networking domains:
 
-- **Network Diagnostics**: Parallel ping utilities with history tracking, TCP port scanning, NTP server testing, and downtime monitoring
+- **Network Diagnostics**: Parallel ping utilities with history tracking, TCP port scanning, NTP server testing, DHCP DISCOVER/OFFER/REQUEST/ACK testing, and downtime monitoring
 - **IP Address Management**: Advanced subnet calculations, IP validation, range operations, and CIDR manipulation
 - **Network Monitoring**: Real-time bandwidth usage, public IP tracking, and interface configuration
 - **MAC Address Operations**: Format conversion, vendor identification via OUI lookup
@@ -23,6 +23,7 @@ Perfect for network administrators, system engineers, DevOps professionals, and 
     - [Ping-IpList](#ping-iplist) - ⭐ Parallel ping with history tracking
     - [Test-TcpPorts](#test-tcpports) - TCP port connectivity testing
     - [Test-NtpServer](#test-ntpserver) - NTP server time synchronization testing
+    - [Invoke-DhcpTest](#invoke-dhcptest) - DHCP server discovery and lease request testing
   - **IP Address Management**
     - [Convert-IpListToSubnets](#convert-iplisttosubnets) - Convert IPs to efficient subnets
     - [Convert-IpListToRanges](#convert-iplisttoranges) - Convert IPs to contiguous ranges
@@ -335,6 +336,77 @@ PS> Test-NtpServer -Server "pool.ntp.org" | Where-Object { [Math]::Abs($_.Offset
 - Audit clock drift across infrastructure
 - Validate NTP configuration after changes
 - Monitor time synchronization health
+
+---
+
+#### Invoke-DhcpTest
+Sends DHCP DISCOVER/OFFER (and optionally REQUEST/ACK) packets to test DHCP servers, similar to the `dhcptest` CLI tool. Supports spoofing the client MAC address, injecting arbitrary DHCP options, requesting specific options back from the server, and targeting either a broadcast segment or a specific server/relay. By default only DISCOVER/OFFER is performed (read-only, no lease is consumed) — the REQUEST/ACK phase is opt-in and gated by `-WhatIf`/`-Confirm`. Never binds the resulting address to a local network adapter.
+
+**Parameters:**
+- `ServerAddress` - DHCP server or relay IP to target (default: `255.255.255.255` broadcast)
+- `ServerPort` - DHCP server UDP port (default: 67)
+- `ClientPort` - Local UDP port to bind, must be 68 to receive replies (default: 68)
+- `ClientMac` (alias `MAC`) - Spoofed client MAC address; random locally-administered MAC if omitted
+- `Bind` - Local IP to bind the socket to, for multi-NIC/VLAN hosts
+- `Hostname` - Convenience for option 12 (Host Name)
+- `VendorClassIdentifier` - Convenience for option 60 (Vendor Class Identifier)
+- `ClientIdentifier` - Convenience for option 61 (Client Identifier)
+- `RequestOptions` (alias `ParameterRequestList`) - Option codes to request via option 55 (default: subnet mask, router, DNS, domain name, lease time, server id, T1/T2)
+- `Option` - Array of custom options as `@{Code=<int>; Type=<Byte|UInt16|UInt32|String|IPAddress|HexString|ByteArray>; Value=<...>}`
+- `TransactionId` - Transaction ID (xid) to use (default: random)
+- `SendRequest` - Opt in to the REQUEST/ACK phase, which can cause the server to commit a lease (gated by `-WhatIf`/`-Confirm`)
+- `RequestedIPAddress` - Overrides the address requested in the REQUEST packet (default: the offered address)
+- `TimeoutSeconds` - Per-attempt wait for a reply (default: 5)
+- `Retries` - Send attempts before giving up on a phase (default: 3)
+- `LogActivity` - Also write DISCOVER/OFFER/REQUEST/ACK events via `Write-Log`
+
+**Example:**
+```powershell
+# Safe default: DISCOVER only, no lease consumed
+PS> Invoke-DhcpTest -Verbose
+
+Status           : OfferReceived
+OfferedAddress   : 192.168.1.87
+ServerIdentifier : 192.168.1.1
+LeaseTimeSeconds : 86400
+
+# Spoof a MAC, set a hostname, request specific options
+PS> Invoke-DhcpTest -ClientMac '02:11:22:33:44:55' -Hostname 'dhcptest-probe' -RequestOptions 1,3,6,15,51
+
+# Complete the full handshake — will consume a lease from the server's pool if it ACKs
+PS> Invoke-DhcpTest -SendRequest -Confirm:$false -Verbose
+
+# Unicast to a specific server/relay from a specific local interface
+PS> Invoke-DhcpTest -ServerAddress 10.0.0.5 -Bind 10.0.1.20
+
+# Inject a custom option (e.g. option 43 vendor-specific info as hex)
+PS> Invoke-DhcpTest -Option @{Code=43; Type='HexString'; Value='0102FF'}
+```
+
+**Output Fields:**
+- `Status` - OfferReceived, AckReceived, NakReceived, NoAckResponse, Timeout, or Error
+- `OfferedAddress` / `AckAddress` - Address offered by the server / confirmed in the ACK
+- `ServerIdentifier` - DHCP server identifier (option 54)
+- `LeaseTimeSeconds` / `LeaseTime` - Lease duration
+- `SubnetMask`, `Router`, `DnsServers`, `DomainName` - Common options decoded from the reply
+- `RenewalTimeT1`, `RebindingTimeT2` - Lease renewal timers
+- `NakMessage` - Server-supplied reason text if NAK'd
+- `Options` - Full dictionary of every option code returned by the server
+- `Attempts`, `ElapsedMs`, `Error` - Diagnostic/troubleshooting fields
+
+**Features:**
+- Spoofed client MAC address for testing device-specific scopes (VoIP phones, printers, PXE clients)
+- Arbitrary custom DHCP option injection (string, hex, or IP address values)
+- Named convenience options for Hostname, Vendor Class Identifier, and Client Identifier
+- Safe by default — only DISCOVER/OFFER runs unless `-SendRequest` is explicitly passed
+- Handles the Windows DHCP Client service's hold on UDP port 68 via `SO_REUSEADDR`
+- Transaction ID correlation so replies from unrelated DHCP traffic on the segment are ignored
+
+**Use Cases:**
+- Verify a DHCP scope's option configuration without consuming a lease
+- Test relay-agent or unicast reachability to a specific DHCP server
+- Validate vendor-class/PXE option delivery before deploying network boot
+- Scripted DHCP server health monitoring
 
 ---
 
@@ -974,6 +1046,7 @@ Ping-IpList -ipList $servers -OutToPipe |
 - **Administrator Privileges**: Required for some network operations
 - **OUI Database**: Required for Find-OUI function (OUI.csv)
 - **Ports Database**: Required for Test-TcpPorts service names (ports.csv)
+- **DHCP Testing (Invoke-DhcpTest)**: Requires Administrator privileges and access to UDP port 68; the Windows "DHCP Client" service normally holds this port — Invoke-DhcpTest uses SO_REUSEADDR to coexist with it, but a persistent bind failure may require temporarily stopping the Dhcp service (`Stop-Service Dhcp -Force`)
 
 ---
 
@@ -1001,4 +1074,5 @@ PSNetworking/
 │   ├── Send-SyslogMessage.ps1
 │   ├── Test-NtpServer.ps1
 │   ├── Invoke-TFTP.ps1
+│   ├── Invoke-DhcpTest.ps1
 │
