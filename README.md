@@ -348,9 +348,12 @@ Sends DHCP DISCOVER/OFFER (and optionally REQUEST/ACK) packets to test DHCP serv
 - `ClientPort` - Local UDP port to bind, must be 68 to receive replies (default: 68)
 - `ClientMac` (alias `MAC`) - Spoofed client MAC address; random locally-administered MAC if omitted
 - `Bind` - Local IP to bind the socket to, for multi-NIC/VLAN hosts
+- `RelayAgentIPAddress` (alias `GiAddr`) - Sets the BOOTP `giaddr` field to simulate a relay agent for a given subnet, so the server can pick a scope other than the one matching this host's own network position. Per RFC 2131, replies to a non-zero `giaddr` go to that address on port 67, not the client's port 68 — pair this with `-Bind` and `-ClientPort 67` set to the same address, and that address must be one this host can actually receive traffic on
 - `Hostname` - Convenience for option 12 (Host Name)
 - `VendorClassIdentifier` - Convenience for option 60 (Vendor Class Identifier)
 - `ClientIdentifier` - Convenience for option 61 (Client Identifier)
+- `CircuitId` / `CircuitIdType` - Convenience for option 82 (Relay Agent Information) sub-option 1, Agent Circuit ID; `CircuitIdType` is `String` (ASCII, default) or `HexString`
+- `RemoteId` / `RemoteIdType` - Convenience for option 82 sub-option 2, Agent Remote ID; same type options as `CircuitId`
 - `RequestOptions` (alias `ParameterRequestList`) - Option codes to request via option 55 (default: subnet mask, router, DNS, domain name, lease time, server id, T1/T2)
 - `Option` - Array of custom options as `@{Code=<int>; Type=<Byte|UInt16|UInt32|String|IPAddress|HexString|ByteArray>; Value=<...>}`
 - `TransactionId` - Transaction ID (xid) to use (default: random)
@@ -381,6 +384,10 @@ PS> Invoke-DhcpTest -ServerAddress 10.0.0.5 -Bind 10.0.1.20
 
 # Inject a custom option (e.g. option 43 vendor-specific info as hex)
 PS> Invoke-DhcpTest -Option @{Code=43; Type='HexString'; Value='0102FF'}
+
+# Simulate a relay agent for a specific subnet/scope, with Option 82 sub-options
+PS> Invoke-DhcpTest -ServerAddress 172.31.3.179 -RelayAgentIPAddress 10.55.2.1 -Bind 10.55.2.1 -ClientPort 67 `
+        -CircuitIdType HexString -CircuitId '0004' -RemoteIdType HexString -RemoteId '0006AABBCCDDEEFF'
 ```
 
 **Output Fields:**
@@ -398,6 +405,7 @@ PS> Invoke-DhcpTest -Option @{Code=43; Type='HexString'; Value='0102FF'}
 - Spoofed client MAC address for testing device-specific scopes (VoIP phones, printers, PXE clients)
 - Arbitrary custom DHCP option injection (string, hex, or IP address values)
 - Named convenience options for Hostname, Vendor Class Identifier, and Client Identifier
+- Relay agent (`giaddr`) simulation and Option 82 (circuit-id/remote-id) injection, for reaching a specific scope on servers with multiple shared networks/pools
 - Safe by default — only DISCOVER/OFFER runs unless `-SendRequest` is explicitly passed
 - Handles the Windows DHCP Client service's hold on UDP port 68 via `SO_REUSEADDR`
 - Transaction ID correlation so replies from unrelated DHCP traffic on the segment are ignored

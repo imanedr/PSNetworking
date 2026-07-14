@@ -122,7 +122,7 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        ReleaseNotes = '1.2.0: Added Invoke-DhcpTest for DHCP DISCOVER/OFFER and optional REQUEST/ACK testing with spoofed MAC, custom options, and structured result objects.'
+        ReleaseNotes = '1.2.0: Added Invoke-DhcpTest for DHCP DISCOVER/OFFER and optional REQUEST/ACK testing with spoofed MAC, custom options, relay agent (giaddr) and Option 82 (circuit-id/remote-id) simulation for multi-scope environments, and structured result objects.'
 
         # Prerelease string of this module
         # Prerelease = ''

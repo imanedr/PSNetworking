@@ -32,6 +32,16 @@
 .PARAMETER Bind
     Local IP address to bind the UDP socket to, for multi-NIC/VLAN hosts. Default: any address.
 
+.PARAMETER RelayAgentIPAddress
+    Sets the BOOTP 'giaddr' field, simulating a relay agent for the given subnet so the server can
+    select a scope other than the one matching this host's own network position. Per RFC 2131 §4.1,
+    when giaddr is non-zero the server sends its reply to giaddr's address on port 67 (the DHCP
+    server port), not to the client's port 68. To actually receive that reply you must also pass
+    -Bind and -ClientPort 67 with the same address as -RelayAgentIPAddress, and that address must
+    be one this host can genuinely receive traffic on (e.g. a real secondary IP/alias on the
+    target subnet). Otherwise the server does reply, but never to us, and the exchange times out.
+    Default: 0.0.0.0 (no relay simulation).
+
 .PARAMETER Hostname
     Convenience for DHCP option 12 (Host Name).
 
@@ -40,6 +50,25 @@
 
 .PARAMETER ClientIdentifier
     Convenience for DHCP option 61 (Client Identifier), sent as an ASCII string value.
+
+.PARAMETER CircuitId
+    Convenience for DHCP option 82 (Relay Agent Information) sub-option 1, Agent Circuit ID.
+    Many switches with DHCP snooping/relay enabled insert this (and RemoteId) into every real
+    client's DISCOVER, and some DHCP servers use it to select the subnet/pool within a shared
+    network — a spoofed packet without it may land in a different, possibly exhausted, pool even
+    with a correct -RelayAgentIPAddress. Encoded per -CircuitIdType (default ASCII String); use
+    'HexString' if your network expects the vendor-specific binary format a real switch sends
+    (check with your network team, e.g. by comparing to a real relayed packet capture).
+
+.PARAMETER CircuitIdType
+    Encoding for -CircuitId: 'String' (ASCII, default) or 'HexString' (raw bytes from hex digits).
+
+.PARAMETER RemoteId
+    Convenience for DHCP option 82 (Relay Agent Information) sub-option 2, Agent Remote ID —
+    typically the relaying switch's own identifier (e.g. its MAC address). See -CircuitId.
+
+.PARAMETER RemoteIdType
+    Encoding for -RemoteId: 'String' (ASCII, default) or 'HexString' (raw bytes from hex digits).
 
 .PARAMETER RequestOptions
     DHCP option codes (0-255) to request via option 55 (Parameter Request List).
@@ -60,8 +89,10 @@
     gated by ShouldProcess (-WhatIf/-Confirm).
 
 .PARAMETER RequestedIPAddress
-    Overrides the address requested in the REQUEST packet (option 50). Defaults to the address
-    offered in the DISCOVER/OFFER phase.
+    Requested address (option 50). If given, it is included as a hint in the DISCOVER packet and
+    used as the requested address in the REQUEST packet (defaulting there to the offered address
+    if this override isn't also intended for REQUEST). Note most DHCP servers do not select a
+    scope based on this hint — see -RelayAgentIPAddress for actual scope selection.
 
 .PARAMETER TimeoutSeconds
     Per-attempt wait for a reply, in seconds. Default: 5.
@@ -94,6 +125,20 @@
 
     Unicasts the DISCOVER to a specific DHCP server/relay from a specific local interface.
 
+.EXAMPLE
+    Invoke-DhcpTest -ServerAddress 172.31.3.174 -RelayAgentIPAddress 10.55.2.1 -Bind 10.55.2.1 -ClientPort 67
+
+    Simulates a relay agent for the 10.55.2.0/24 scope so the server offers from that subnet
+    instead of the one matching this host's own address. Requires 10.55.2.1 to be a real,
+    reachable address on this host (e.g. a secondary IP/alias) and -ClientPort 67, since replies
+    to a non-zero giaddr go to port 67, not 68. See -RelayAgentIPAddress notes.
+
+.EXAMPLE
+    Invoke-DhcpTest -ServerAddress 172.31.3.179 -RelayAgentIPAddress 10.55.2.1 -Bind 10.55.2.1 -ClientPort 67 -CircuitIdType HexString -CircuitId '0004' -RemoteIdType HexString -RemoteId '0006AABBCCDDEEFF'
+
+    Simulates a relay agent that also inserts Option 82 sub-options, for DHCP servers that use
+    circuit-id/remote-id (not just giaddr) to select the pool within a shared network.
+
 .NOTES
     The BOOTP broadcast flag (0x8000) is always set in outgoing packets. With ciaddr=0 and
     giaddr=0 and no address bound to a real interface, an RFC-compliant server always replies via
@@ -114,9 +159,14 @@ function Invoke-DhcpTest {
         [Parameter()][ValidateRange(1, 65535)][int]$ClientPort = 68,
         [Parameter()][Alias('MAC')][string]$ClientMac,
         [Parameter()][string]$Bind,
+        [Parameter()][Alias('GiAddr')][string]$RelayAgentIPAddress,
         [Parameter()][string]$Hostname,
         [Parameter()][string]$VendorClassIdentifier,
         [Parameter()][string]$ClientIdentifier,
+        [Parameter()][string]$CircuitId,
+        [Parameter()][ValidateSet('String', 'HexString')][string]$CircuitIdType = 'String',
+        [Parameter()][string]$RemoteId,
+        [Parameter()][ValidateSet('String', 'HexString')][string]$RemoteIdType = 'String',
         [Parameter()][Alias('ParameterRequestList')][int[]]$RequestOptions = @(1, 3, 6, 15, 51, 54, 58, 59),
         [Parameter()][object[]]$Option = @(),
         [Parameter()][uint32]$TransactionId,
@@ -235,26 +285,41 @@ function Invoke-DhcpTest {
         "{0}.{1}.{2}.{3}" -f $b[$offset], $b[$offset + 1], $b[$offset + 2], $b[$offset + 3]
     }
 
+    function Format-HexBytes([byte[]]$v) {
+        ($v | ForEach-Object { $_.ToString('x2') }) -join ''
+    }
+
     function ConvertFrom-DhcpOptions([hashtable]$rawOptions) {
-        $decoded = [ordered]@{}
+        # Deliberately a plain hashtable, not [ordered]: OrderedDictionary has both an
+        # object-key indexer and a positional int-index indexer, and since our keys are
+        # integers, $decoded[$code] resolves to the positional one and throws
+        # ArgumentOutOfRangeException ("index") the moment a code doesn't match an
+        # existing position.
+        $decoded = @{}
         foreach ($code in $rawOptions.Keys) {
             $v = $rawOptions[$code]
             $decoded[$code] = switch ($code) {
-                1 { Format-IPBytes $v 0 }
-                3 { Format-IPBytes $v 0 }
+                1 { if ($v.Length -ge 4) { Format-IPBytes $v 0 } else { Format-HexBytes $v } }
+                3 {
+                    if ($v.Length -ge 4) {
+                        $routers = New-Object System.Collections.Generic.List[string]
+                        for ($o = 0; $o + 3 -lt $v.Length; $o += 4) { $routers.Add((Format-IPBytes $v $o)) }
+                        , $routers.ToArray()
+                    } else { Format-HexBytes $v }
+                }
                 6 {
                     $servers = New-Object System.Collections.Generic.List[string]
                     for ($o = 0; $o + 3 -lt $v.Length; $o += 4) { $servers.Add((Format-IPBytes $v $o)) }
                     , $servers.ToArray()
                 }
                 15 { [System.Text.Encoding]::ASCII.GetString($v) }
-                51 { ReadU32BE $v 0 }
-                53 { $MsgTypeNames[[int]$v[0]] }
-                54 { Format-IPBytes $v 0 }
+                51 { if ($v.Length -ge 4) { ReadU32BE $v 0 } else { $null } }
+                53 { if ($v.Length -ge 1) { $MsgTypeNames[[int]$v[0]] } else { $null } }
+                54 { if ($v.Length -ge 4) { Format-IPBytes $v 0 } else { Format-HexBytes $v } }
                 56 { [System.Text.Encoding]::ASCII.GetString($v) }
-                58 { ReadU32BE $v 0 }
-                59 { ReadU32BE $v 0 }
-                default { ($v | ForEach-Object { $_.ToString('x2') }) -join '' }
+                58 { if ($v.Length -ge 4) { ReadU32BE $v 0 } else { $null } }
+                59 { if ($v.Length -ge 4) { ReadU32BE $v 0 } else { $null } }
+                default { Format-HexBytes $v }
             }
         }
         return $decoded
@@ -289,7 +354,8 @@ function Invoke-DhcpTest {
             [byte[]]$ChaddrBytes,
             [System.Collections.Generic.List[hashtable]]$Options,
             [string]$RequestedIP,
-            [string]$ServerId
+            [string]$ServerId,
+            [byte[]]$GiaddrBytes
         )
 
         $hdr = [byte[]]::new(236)
@@ -300,7 +366,8 @@ function Invoke-DhcpTest {
         [Buffer]::BlockCopy([byte[]](WriteU32BE $Xid), 0, $hdr, 4, 4)
         [Buffer]::BlockCopy([byte[]](WriteU16BE 0), 0, $hdr, 8, 2)        # secs
         [Buffer]::BlockCopy([byte[]](WriteU16BE 0x8000), 0, $hdr, 10, 2)  # flags: broadcast bit always set
-        # ciaddr/yiaddr/siaddr/giaddr left zero
+        # ciaddr/yiaddr/siaddr left zero
+        if ($GiaddrBytes) { [Buffer]::BlockCopy($GiaddrBytes, 0, $hdr, 24, 4) }
         [Buffer]::BlockCopy($ChaddrBytes, 0, $hdr, 28, 6)         # chaddr, remaining 10 bytes zero-padded
 
         $ms = [System.IO.MemoryStream]::new()
@@ -312,6 +379,8 @@ function Invoke-DhcpTest {
         if ($MessageType -eq $MSG_REQUEST) {
             Add-DhcpOption $ms 50 ([System.Net.IPAddress]::Parse($RequestedIP).GetAddressBytes())
             Add-DhcpOption $ms 54 ([System.Net.IPAddress]::Parse($ServerId).GetAddressBytes())
+        } elseif ($RequestedIP) {
+            Add-DhcpOption $ms 50 ([System.Net.IPAddress]::Parse($RequestedIP).GetAddressBytes())
         }
 
         if ($RequestOptions -and $RequestOptions.Count -gt 0) {
@@ -369,11 +438,37 @@ function Invoke-DhcpTest {
     Add-NamedOption 60 'String' $VendorClassIdentifier 'VendorClassIdentifier'
     Add-NamedOption 61 'String' $ClientIdentifier 'ClientIdentifier'
 
+    if ($CircuitId -or $RemoteId) {
+        if (-not $usedCodes.Add(82)) { throw "Option 82 specified both via -CircuitId/-RemoteId and -Option; use only one." }
+        $subMs = [System.IO.MemoryStream]::new()
+        if ($CircuitId) {
+            $cidBytes = ConvertTo-DhcpOptionBytes -Code 82 -Type $CircuitIdType -Value $CircuitId
+            if ($cidBytes.Length -gt 255) { throw "CircuitId value is $($cidBytes.Length) bytes, exceeds the 255-byte sub-option limit." }
+            $subMs.WriteByte(1)
+            $subMs.WriteByte([byte]$cidBytes.Length)
+            $subMs.Write($cidBytes, 0, $cidBytes.Length)
+        }
+        if ($RemoteId) {
+            $ridBytes = ConvertTo-DhcpOptionBytes -Code 82 -Type $RemoteIdType -Value $RemoteId
+            if ($ridBytes.Length -gt 255) { throw "RemoteId value is $($ridBytes.Length) bytes, exceeds the 255-byte sub-option limit." }
+            $subMs.WriteByte(2)
+            $subMs.WriteByte([byte]$ridBytes.Length)
+            $subMs.Write($ridBytes, 0, $ridBytes.Length)
+        }
+        $allOptions.Add(@{ Code = 82; Type = 'ByteArray'; Value = $subMs.ToArray() })
+    }
+
     $bindAddr = if ($Bind) {
         $parsed = $null
         if (-not [System.Net.IPAddress]::TryParse($Bind, [ref]$parsed)) { throw "Invalid -Bind address: '$Bind'." }
         $parsed
     } else { [System.Net.IPAddress]::Any }
+
+    $giaddrBytes = if ($RelayAgentIPAddress) {
+        $parsed = $null
+        if (-not [System.Net.IPAddress]::TryParse($RelayAgentIPAddress, [ref]$parsed)) { throw "Invalid -RelayAgentIPAddress: '$RelayAgentIPAddress'." }
+        $parsed.GetAddressBytes()
+    } else { $null }
 
     $serverIP = $null
     try { $serverIP = [System.Net.IPAddress]::Parse($ServerAddress) }
@@ -428,7 +523,7 @@ function Invoke-DhcpTest {
 
         try {
             # ── DISCOVER → OFFER ─────────────────────────────────────────────
-            $discoverPkt = New-DhcpPacket -MessageType $MSG_DISCOVER -Xid $xid -ChaddrBytes $clientMacBytes -Options $allOptions
+            $discoverPkt = New-DhcpPacket -MessageType $MSG_DISCOVER -Xid $xid -ChaddrBytes $clientMacBytes -Options $allOptions -RequestedIP $RequestedIPAddress -GiaddrBytes $giaddrBytes
 
             $attempt = 0
             $offer = $null
@@ -499,7 +594,7 @@ function Invoke-DhcpTest {
                 return $result
             }
 
-            $requestPkt = New-DhcpPacket -MessageType $MSG_REQUEST -Xid $xid -ChaddrBytes $clientMacBytes -Options $allOptions -RequestedIP $requestedIP -ServerId $serverIdentifier
+            $requestPkt = New-DhcpPacket -MessageType $MSG_REQUEST -Xid $xid -ChaddrBytes $clientMacBytes -Options $allOptions -RequestedIP $requestedIP -ServerId $serverIdentifier -GiaddrBytes $giaddrBytes
             $result.RequestSent = $true
 
             $attempt = 0
