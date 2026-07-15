@@ -1,55 +1,55 @@
 #Requires -Version 5.1
+<#
+.SYNOPSIS
+    Native PowerShell TFTP client — upload and download files without tftp.exe.
+
+.DESCRIPTION
+    Implements RFC 1350 (TFTP Protocol Revision 2) plus RFC 2347/2348 option
+    extensions (blksize, windowsize).  All I/O uses System.Net.Sockets.UdpClient;
+    no external executables are required.  Progress is printed to the console in
+    a curl-like style.
+
+.PARAMETER Server
+    Hostname or IP address of the TFTP server.
+
+.PARAMETER RemoteFile
+    Path / filename as it should appear on the server side.
+
+.PARAMETER LocalFile
+    Local filesystem path to read from (Upload) or write to (Download).
+
+.PARAMETER Operation
+    'Download' (default) or 'Upload'.
+
+.PARAMETER Port
+    UDP port on the server. Default: 69.
+
+.PARAMETER Mode
+    Transfer mode: 'octet' (binary, default) or 'netascii'.
+
+.PARAMETER BlockSize
+    Payload bytes per DATA packet (RFC 2348). Range 8-65464. Default: 512.
+
+.PARAMETER TimeoutSeconds
+    Per-packet ACK/DATA wait timeout in seconds. Default: 5.
+
+.PARAMETER Retries
+    How many times to re-send a packet before giving up. Default: 5.
+
+.PARAMETER WindowSize
+    Unacknowledged blocks in flight (RFC 7440). Default: 1 (stop-and-wait).
+
+.PARAMETER PassThru
+    Download: return [byte[]] instead of writing a file.
+    Upload:   accept [byte[]] from pipeline instead of reading a file.
+
+.EXAMPLE
+    Invoke-TFTPRequest -Server 192.168.1.1 -RemoteFile 'firmware.bin' -LocalFile 'C:\firmware.bin'
+
+.EXAMPLE
+    Invoke-TFTPRequest -Server 192.168.1.1 -RemoteFile 'backup.cfg' -LocalFile 'C:\backup.cfg' -Operation Upload -BlockSize 1468
+#>
 function Invoke-TFTPRequest {
-    <#
-    .SYNOPSIS
-        Native PowerShell TFTP client — upload and download files without tftp.exe.
-
-    .DESCRIPTION
-        Implements RFC 1350 (TFTP Protocol Revision 2) plus RFC 2347/2348 option
-        extensions (blksize, windowsize).  All I/O uses System.Net.Sockets.UdpClient;
-        no external executables are required.  Progress is printed to the console in
-        a curl-like style.
-
-    .PARAMETER Server
-        Hostname or IP address of the TFTP server.
-
-    .PARAMETER RemoteFile
-        Path / filename as it should appear on the server side.
-
-    .PARAMETER LocalFile
-        Local filesystem path to read from (Upload) or write to (Download).
-
-    .PARAMETER Operation
-        'Download' (default) or 'Upload'.
-
-    .PARAMETER Port
-        UDP port on the server. Default: 69.
-
-    .PARAMETER Mode
-        Transfer mode: 'octet' (binary, default) or 'netascii'.
-
-    .PARAMETER BlockSize
-        Payload bytes per DATA packet (RFC 2348). Range 8-65464. Default: 512.
-
-    .PARAMETER TimeoutSeconds
-        Per-packet ACK/DATA wait timeout in seconds. Default: 5.
-
-    .PARAMETER Retries
-        How many times to re-send a packet before giving up. Default: 5.
-
-    .PARAMETER WindowSize
-        Unacknowledged blocks in flight (RFC 7440). Default: 1 (stop-and-wait).
-
-    .PARAMETER PassThru
-        Download: return [byte[]] instead of writing a file.
-        Upload:   accept [byte[]] from pipeline instead of reading a file.
-
-    .EXAMPLE
-        Invoke-TFTPRequest -Server 192.168.1.1 -RemoteFile 'firmware.bin' -LocalFile 'C:\firmware.bin'
-
-    .EXAMPLE
-        Invoke-TFTPRequest -Server 192.168.1.1 -RemoteFile 'backup.cfg' -LocalFile 'C:\backup.cfg' -Operation Upload -BlockSize 1468
-    #>
     [CmdletBinding(SupportsShouldProcess)]
     [OutputType([byte[]])]
     param(

@@ -1,38 +1,38 @@
+<#
+.SYNOPSIS
+    Calculates the next available subnet based on a given CIDR notation.
+
+.DESCRIPTION
+    The Get-NextSubnet function takes a subnet in CIDR notation and calculates the next available subnet
+    with either the same prefix length or a specified one. It handles IPv4 addresses and ensures proper
+    subnet boundary calculations.
+
+.PARAMETER CIDR
+    Specifies the current subnet in CIDR notation (e.g., "192.168.1.0/24").
+    Must be a valid IPv4 CIDR notation.
+
+.PARAMETER prefixLength
+    Specifies the prefix length for the next subnet. Must be between 1 and 32.
+    If not specified, uses the same prefix length as the input CIDR.
+
+.EXAMPLE
+    Get-NextSubnet -CIDR "192.168.1.0/24"
+    Returns: "192.168.2.0/24"
+
+.EXAMPLE
+    Get-NextSubnet -CIDR "192.168.1.0/24" -prefixLength 23
+    Returns: "192.168.3.0/23"
+
+.NOTES
+    Author: PSNetworking
+    Version: 1.1.0
+    Requires: get-ipcalc function
+
+.OUTPUTS
+    System.String
+    Returns the next subnet in CIDR notation
+#>
 Function Get-NextSubnet {
-    <#
-    .SYNOPSIS
-        Calculates the next available subnet based on a given CIDR notation.
-
-    .DESCRIPTION
-        The Get-NextSubnet function takes a subnet in CIDR notation and calculates the next available subnet
-        with either the same prefix length or a specified one. It handles IPv4 addresses and ensures proper
-        subnet boundary calculations.
-
-    .PARAMETER CIDR
-        Specifies the current subnet in CIDR notation (e.g., "192.168.1.0/24").
-        Must be a valid IPv4 CIDR notation.
-
-    .PARAMETER prefixLength
-        Specifies the prefix length for the next subnet. Must be between 1 and 32.
-        If not specified, uses the same prefix length as the input CIDR.
-
-    .EXAMPLE
-        Get-NextSubnet -CIDR "192.168.1.0/24"
-        Returns: "192.168.2.0/24"
-
-    .EXAMPLE
-        Get-NextSubnet -CIDR "192.168.1.0/24" -prefixLength 23
-        Returns: "192.168.3.0/23"
-
-    .NOTES
-        Author: PSNetworking
-        Version: 1.1.0
-        Requires: get-ipcalc function
-
-    .OUTPUTS
-        System.String
-        Returns the next subnet in CIDR notation
-    #>
     param (
         [ValidatePattern('^\d{1,3}(\.\d{1,3}){3}/[1-9][0-9]?$')]
         [string]$CIDR,

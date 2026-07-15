@@ -1,38 +1,39 @@
+<#
+.SYNOPSIS
+    Lists all IP addresses within a specified subnet using CIDR notation.
+
+.DESCRIPTION
+    The Get-IPAddressesInSubnet function generates a complete list of all possible IP addresses 
+    within a given subnet specified in CIDR notation. It supports all subnet masks from /0 to /32.
+
+.PARAMETER Subnet
+    Specifies the subnet in CIDR notation (e.g., "192.168.0.0/24")
+
+.EXAMPLE
+    Get-IPAddressesInSubnet -Subnet "192.168.1.0/24"
+    Lists all IP addresses in the 192.168.1.0/24 subnet (256 addresses)
+
+.EXAMPLE
+    Get-IPAddressesInSubnet -Subnet "10.0.0.0/30"
+    Lists all IP addresses in the 10.0.0.0/30 subnet (4 addresses)
+
+.INPUTS
+    String
+
+.OUTPUTS
+    System.String[]
+    Returns an array of IP addresses as strings
+
+.NOTES
+    Author: Iman Edrisian
+    Version: 1.0.0
+    Requires PowerShell 5.1 or higher
+
+.LINK
+    https://github.com/imanedr/psnetworking
+#>
+
 function Get-IPAddressesInSubnet {
-    <#
-    .SYNOPSIS
-        Lists all IP addresses within a specified subnet using CIDR notation.
-
-    .DESCRIPTION
-        The Get-IPAddressesInSubnet function generates a complete list of all possible IP addresses
-        within a given subnet specified in CIDR notation. It supports all subnet masks from /0 to /32.
-
-    .PARAMETER Subnet
-        Specifies the subnet in CIDR notation (e.g., "192.168.0.0/24")
-
-    .EXAMPLE
-        Get-IPAddressesInSubnet -Subnet "192.168.1.0/24"
-        Lists all IP addresses in the 192.168.1.0/24 subnet (256 addresses)
-
-    .EXAMPLE
-        Get-IPAddressesInSubnet -Subnet "10.0.0.0/30"
-        Lists all IP addresses in the 10.0.0.0/30 subnet (4 addresses)
-
-    .INPUTS
-        String
-
-    .OUTPUTS
-        System.String[]
-        Returns an array of IP addresses as strings
-
-    .NOTES
-        Author: Iman Edrisian
-        Version: 1.0.0
-        Requires PowerShell 5.1 or higher
-
-    .LINK
-        https://github.com/imanedr/psnetworking
-    #>
     [CmdletBinding()]
     param (
         # Parameter to specify the subnet in CIDR notation (e.g. 192.168.0.0/24)

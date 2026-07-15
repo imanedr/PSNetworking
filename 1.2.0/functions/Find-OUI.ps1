@@ -44,53 +44,54 @@ function Convert-MacAddressToOUI
 }
 
 
+<#
+.SYNOPSIS
+    Identifies vendor information from MAC addresses using OUI lookup.
+
+.DESCRIPTION
+    The Find-OUI function takes MAC addresses and identifies the vendor/manufacturer by looking up the OUI (Organizationally Unique Identifier) in a CSV database. It supports single or multiple MAC addresses, pipeline input, and can read directly from clipboard.
+
+.PARAMETER macAddress
+    One or more MAC addresses to lookup. Accepts various formats:
+    - With dashes (00-11-22-33-44-55)
+    - With colons (00:11:22:33:44:55)
+    - Without separators (001122334455)
+
+.PARAMETER GetMacFromClipboard
+    Switch parameter to read MAC address directly from clipboard instead of providing it as parameter.
+
+.PARAMETER filePath
+    Path to the OUI database CSV file. Defaults to OUI.csv in the script's directory.
+
+.EXAMPLE
+    Find-OUI -macAddress "A8-C6-47-12-34-56"
+    Looks up vendor information for a single MAC address
+
+.EXAMPLE
+    "00:11:22:33:44:55", "AA:BB:CC:DD:EE:FF" | Find-OUI
+    Looks up vendor information for multiple MAC addresses via pipeline
+
+.EXAMPLE
+    Find-OUI -GetMacFromClipboard
+    Reads MAC address from clipboard and performs lookup
+
+.OUTPUTS
+    PSCustomObject with properties:
+    - MACAddress: The input MAC address
+    - OUI: The extracted OUI
+    - Company: The vendor/manufacturer name
+
+.NOTES
+    Requires:
+    - OUI.csv database file in the specified path
+    - Read access to the CSV file
+    
+.LINK
+    https://github.com/imanedr/psnetworking
+#>
+
 function Find-OUI
 {
-    <#
-    .SYNOPSIS
-        Identifies vendor information from MAC addresses using OUI lookup.
-
-    .DESCRIPTION
-        The Find-OUI function takes MAC addresses and identifies the vendor/manufacturer by looking up the OUI (Organizationally Unique Identifier) in a CSV database. It supports single or multiple MAC addresses, pipeline input, and can read directly from clipboard.
-
-    .PARAMETER macAddress
-        One or more MAC addresses to lookup. Accepts various formats:
-        - With dashes (00-11-22-33-44-55)
-        - With colons (00:11:22:33:44:55)
-        - Without separators (001122334455)
-
-    .PARAMETER GetMacFromClipboard
-        Switch parameter to read MAC address directly from clipboard instead of providing it as parameter.
-
-    .PARAMETER filePath
-        Path to the OUI database CSV file. Defaults to OUI.csv in the script's directory.
-
-    .EXAMPLE
-        Find-OUI -macAddress "A8-C6-47-12-34-56"
-        Looks up vendor information for a single MAC address
-
-    .EXAMPLE
-        "00:11:22:33:44:55", "AA:BB:CC:DD:EE:FF" | Find-OUI
-        Looks up vendor information for multiple MAC addresses via pipeline
-
-    .EXAMPLE
-        Find-OUI -GetMacFromClipboard
-        Reads MAC address from clipboard and performs lookup
-
-    .OUTPUTS
-        PSCustomObject with properties:
-        - MACAddress: The input MAC address
-        - OUI: The extracted OUI
-        - Company: The vendor/manufacturer name
-
-    .NOTES
-        Requires:
-        - OUI.csv database file in the specified path
-        - Read access to the CSV file
-
-    .LINK
-        https://github.com/imanedr/psnetworking
-    #>
     param (
         [Parameter(Mandatory = $false, ValueFromPipeline = $true, Position = 0)]
         [Alias("MAC")]

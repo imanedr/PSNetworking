@@ -1,52 +1,53 @@
-function Ping-Ip {
-    <#
-    .SYNOPSIS
-    The Ping-Ip function pings a specified computer name or IP address to test the network connection and provides detailed information on the response status.
+<#
+.SYNOPSIS
+The Ping-Ip function pings a specified computer name or IP address to test the network connection and provides detailed information on the response status.
 
-    .DESCRIPTION
-    The Ping-Ip function allows you to test the connectivity of a network by pinging a specified computer name or IP address. The function returns detailed information about the response, including the number of sent and received packets, the time taken for each response, and the status of each response.
+.DESCRIPTION
+The Ping-Ip function allows you to test the connectivity of a network by pinging a specified computer name or IP address. The function returns detailed information about the response, including the number of sent and received packets, the time taken for each response, and the status of each response. 
 
-    .PARAMETER ComputerName
-    Mandatory parameter that takes the name or IP address of the computer you want to ping.
+.PARAMETER ComputerName
+Mandatory parameter that takes the name or IP address of the computer you want to ping.
 
-    .PARAMETER Count
-    The number of pings to send. The default value is 4.
+.PARAMETER Count
+The number of pings to send. The default value is 4.
 
-    .PARAMETER BufferSize
-    The size of the buffer in bytes to use for the data portion of the ping packet. The default value is 32.
+.PARAMETER BufferSize
+The size of the buffer in bytes to use for the data portion of the ping packet. The default value is 32.
 
-    .PARAMETER DontFragment
-    A switch parameter that indicates whether the ping packet can be fragmented.
+.PARAMETER DontFragment
+A switch parameter that indicates whether the ping packet can be fragmented. 
 
-    .PARAMETER Ttl
-    The time-to-live value to use for the ping packet. The default value is 128.
+.PARAMETER Ttl
+The time-to-live value to use for the ping packet. The default value is 128.
 
-    .PARAMETER Timeout
-    The number of milliseconds to wait for a response to the ping request. The default value is 5000.
+.PARAMETER Timeout
+The number of milliseconds to wait for a response to the ping request. The default value is 5000.
 
-    .PARAMETER Continuous
-    A switch parameter that indicates whether to send an infinite number of pings.
+.PARAMETER Continuous
+A switch parameter that indicates whether to send an infinite number of pings.
 
-    .PARAMETER Short
-    A switch parameter that make the output shorter.
+.PARAMETER Short
+A switch parameter that make the output shorter.
 
-    .PARAMETER OutToPipe
-    A switch parameter. When specified, the function outputs objects to the pipeline instead of formatted text, making it easier to use the results in scripts or further processing.
+.PARAMETER OutToPipe
+A switch parameter. When specified, the function outputs objects to the pipeline instead of formatted text, making it easier to use the results in scripts or further processing.
 
-    .EXAMPLE
-    PS C:\> Ping-Ip -ComputerName "www.google.com"
-    Pings the www.google.com server and returns the results of the ping.
+.EXAMPLE
+PS C:\> Ping-Ip -ComputerName "www.google.com"
+Pings the www.google.com server and returns the results of the ping.
 
-    .EXAMPLE
-    PS C:\> Ping-Ip -ComputerName "www.google.com" -Continuous
-    Pings the www.google.com server continuously and returns the results of each ping.
+.EXAMPLE
+PS C:\> Ping-Ip -ComputerName "www.google.com" -Continuous
+Pings the www.google.com server continuously and returns the results of each ping.
 
-    .OUTPUTS
-    The Ping-Ip function returns information about the network response to the ping request, including the date and time, the response status, and the response time.
+.OUTPUTS
+The Ping-Ip function returns information about the network response to the ping request, including the date and time, the response status, and the response time.
 
-    .NOTES
-    Use the Ping-Ip function to test the connectivity of a network and diagnose any potential issues.
+.NOTES
+Use the Ping-Ip function to test the connectivity of a network and diagnose any potential issues.```
+
     #>
+function Ping-Ip {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]

@@ -1,71 +1,72 @@
+<#
+.SYNOPSIS
+    Tests connectivity to specified TCP ports on target hosts.
+
+.DESCRIPTION
+    This function allows you to test connectivity to TCP ports for a list of target hosts.
+    You can specify a single port, a range of ports, or use a list of 100 or 1000 most common TCP ports.
+    The function can receive target inputs and port numbers via the pipeline and can also use the clipboard
+    for target input. Results can be sorted or filtered to show only open ports.
+
+.PARAMETER Targets
+    Target hosts (IP addresses or domain names) that need to be tested.
+    This parameter can receive input from the pipeline.
+
+.PARAMETER UseClipboardInput
+    If specified, it uses clipboard contents as target input.
+
+.PARAMETER PortNumber
+    A single port number to test, validated to be in the range of 1 to 65535.
+
+.PARAMETER PortList
+    An array of port numbers to test, each validated to be in the range of 1 to 65535.
+
+.PARAMETER PortRange
+    A range of ports to test, specified in "startPort-endPort" format, validated to ensure range is correct.
+
+.PARAMETER Timeout
+    Timeout for connections, default is 1000 milliseconds.
+
+.PARAMETER UseCommon100Ports
+    If specified, test against the 100 most common TCP ports.
+
+.PARAMETER UseCommon1000Ports
+    If specified, test against the 1000 most common TCP ports.
+
+.PARAMETER SortResults
+    If specified, results will be sorted by IP address.
+
+.PARAMETER MaxThreads
+    Maximum number of concurrent threads.
+
+.PARAMETER FilePath
+    File path for the ports database. Defaults to a CSV file named `ports.csv` in the script's directory.
+
+.EXAMPLE
+    Test-TcpPorts -Targets '192.168.1.1' -PortNumber 80
+    Tests connectivity on port 80 for the IP address 192.168.1.1.
+
+.EXAMPLE
+    Test-TcpPorts -Targets '192.168.1.1' -PortList 80,443,3389
+    Tests connectivity on ports 80, 443, and 3389 for the IP address 192.168.1.1.
+
+.EXAMPLE
+    '192.168.1.1', '192.168.1.2' | Test-TcpPorts -UseCommon100Ports
+    Tests connectivity on the 100 most common TCP ports for the given IP addresses.
+
+.EXAMPLE
+    Test-TcpPorts -Targets '192.168.1.1/24' -PortRange '80-85' -OnlyShowOpenPorts -SortResults
+    Tests connectivity on ports 80 to 85 within the given subnet, sorts the results, and shows only open ports.
+
+.EXAMPLE
+    Test-TcpPorts -UseClipboardInput -UseCommon1000Ports
+    Uses clipboard contents as target IP addresses or hostnames and tests the most common 1000 TCP ports.
+
+.NOTES
+    Ensure the port description database CSV file exists at the specified file path.
+
+#>
 function Test-TcpPorts {
-    <#
-    .SYNOPSIS
-        Tests connectivity to specified TCP ports on target hosts.
-
-    .DESCRIPTION
-        This function allows you to test connectivity to TCP ports for a list of target hosts.
-        You can specify a single port, a range of ports, or use a list of 100 or 1000 most common TCP ports.
-        The function can receive target inputs and port numbers via the pipeline and can also use the clipboard
-        for target input. Results can be sorted or filtered to show only open ports.
-
-    .PARAMETER Targets
-        Target hosts (IP addresses or domain names) that need to be tested.
-        This parameter can receive input from the pipeline.
-
-    .PARAMETER UseClipboardInput
-        If specified, it uses clipboard contents as target input.
-
-    .PARAMETER PortNumber
-        A single port number to test, validated to be in the range of 1 to 65535.
-
-    .PARAMETER PortList
-        An array of port numbers to test, each validated to be in the range of 1 to 65535.
-
-    .PARAMETER PortRange
-        A range of ports to test, specified in "startPort-endPort" format, validated to ensure range is correct.
-
-    .PARAMETER Timeout
-        Timeout for connections, default is 1000 milliseconds.
-
-    .PARAMETER UseCommon100Ports
-        If specified, test against the 100 most common TCP ports.
-
-    .PARAMETER UseCommon1000Ports
-        If specified, test against the 1000 most common TCP ports.
-
-    .PARAMETER SortResults
-        If specified, results will be sorted by IP address.
-
-    .PARAMETER MaxThreads
-        Maximum number of concurrent threads.
-
-    .PARAMETER FilePath
-        File path for the ports database. Defaults to a CSV file named `ports.csv` in the script's directory.
-
-    .EXAMPLE
-        Test-TcpPorts -Targets '192.168.1.1' -PortNumber 80
-        Tests connectivity on port 80 for the IP address 192.168.1.1.
-
-    .EXAMPLE
-        Test-TcpPorts -Targets '192.168.1.1' -PortList 80,443,3389
-        Tests connectivity on ports 80, 443, and 3389 for the IP address 192.168.1.1.
-
-    .EXAMPLE
-        '192.168.1.1', '192.168.1.2' | Test-TcpPorts -UseCommon100Ports
-        Tests connectivity on the 100 most common TCP ports for the given IP addresses.
-
-    .EXAMPLE
-        Test-TcpPorts -Targets '192.168.1.1/24' -PortRange '80-85' -OnlyShowOpenPorts -SortResults
-        Tests connectivity on ports 80 to 85 within the given subnet, sorts the results, and shows only open ports.
-
-    .EXAMPLE
-        Test-TcpPorts -UseClipboardInput -UseCommon1000Ports
-        Uses clipboard contents as target IP addresses or hostnames and tests the most common 1000 TCP ports.
-
-    .NOTES
-        Ensure the port description database CSV file exists at the specified file path.
-    #>
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]

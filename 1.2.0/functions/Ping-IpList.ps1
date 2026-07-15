@@ -1,5 +1,4 @@
-function Ping-IpList {
-    <#
+ <#
     .SYNOPSIS
     Advanced parallel ping utility for multiple IP addresses with history tracking and statistics.
 
@@ -118,6 +117,8 @@ function Ping-IpList {
     Requires: PowerShell 5.1 or higher
     Tags: Network, Monitoring, Ping
     #>
+function Ping-IpList {
+   
     [CmdletBinding()]
     param (
         [switch]$FromClipBoard,

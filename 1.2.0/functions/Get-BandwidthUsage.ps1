@@ -1,43 +1,45 @@
+
+<#
+.SYNOPSIS
+Monitors real-time bandwidth usage for a specified network interface.
+
+.DESCRIPTION
+The Get-BandwidthUsage function provides continuous monitoring of network bandwidth usage, displaying upload and download speeds along with cumulative data transfer. It supports both instantaneous view and historical logging of network traffic.
+
+.PARAMETER InterfaceName
+The name of the network interface to monitor. This parameter is mandatory.
+
+.PARAMETER ShowHistory
+Switch parameter that enables logging of historical bandwidth data instead of showing only current values.
+
+.EXAMPLE
+Get-BandwidthUsage -InterfaceName "Ethernet"
+# Shows real-time bandwidth usage for the Ethernet interface with current values only
+
+.EXAMPLE
+Get-BandwidthUsage -InterfaceName "Wi-Fi" -ShowHistory
+# Logs historical bandwidth usage data for the Wi-Fi interface
+
+.OUTPUTS
+Returns a custom object containing:
+- Send: Current upload speed (Kbps or Mbps)
+- Receive: Current download speed (Kbps or Mbps)
+- TotalSent: Cumulative data sent (Mb or Gb)
+- TotalReceived: Cumulative data received (Mb or Gb)
+- Time: Timestamp (only when -ShowHistory is used)
+
+.NOTES
+- Requires administrator privileges
+- Press Ctrl+C to stop monitoring
+- Updates every second
+- Automatically converts units between Kbps/Mbps and Mb/Gb based on magnitude
+
+.LINK
+https://github.com/imanedr/psnetworking
+#>
+
 function Get-BandwidthUsage
 {
-    <#
-    .SYNOPSIS
-    Monitors real-time bandwidth usage for a specified network interface.
-
-    .DESCRIPTION
-    The Get-BandwidthUsage function provides continuous monitoring of network bandwidth usage, displaying upload and download speeds along with cumulative data transfer. It supports both instantaneous view and historical logging of network traffic.
-
-    .PARAMETER InterfaceName
-    The name of the network interface to monitor. This parameter is mandatory.
-
-    .PARAMETER ShowHistory
-    Switch parameter that enables logging of historical bandwidth data instead of showing only current values.
-
-    .EXAMPLE
-    Get-BandwidthUsage -InterfaceName "Ethernet"
-    # Shows real-time bandwidth usage for the Ethernet interface with current values only
-
-    .EXAMPLE
-    Get-BandwidthUsage -InterfaceName "Wi-Fi" -ShowHistory
-    # Logs historical bandwidth usage data for the Wi-Fi interface
-
-    .OUTPUTS
-    Returns a custom object containing:
-    - Send: Current upload speed (Kbps or Mbps)
-    - Receive: Current download speed (Kbps or Mbps)
-    - TotalSent: Cumulative data sent (Mb or Gb)
-    - TotalReceived: Cumulative data received (Mb or Gb)
-    - Time: Timestamp (only when -ShowHistory is used)
-
-    .NOTES
-    - Requires administrator privileges
-    - Press Ctrl+C to stop monitoring
-    - Updates every second
-    - Automatically converts units between Kbps/Mbps and Mb/Gb based on magnitude
-
-    .LINK
-    https://github.com/imanedr/psnetworking
-    #>
     [CmdletBinding()]
     param (
         # This parameter specifies the name of the network interface to monitor

@@ -1,48 +1,48 @@
+<#
+.SYNOPSIS
+    Tests one or more NTP servers and returns time synchronization information.
+
+.DESCRIPTION
+    Queries NTP servers using UDP port 123 and retrieves time synchronization data.
+    Returns the server time, offset from local clock, round-trip delay, and stratum level.
+    Supports testing multiple servers in parallel.
+
+.PARAMETER Server
+    One or more NTP server hostnames or IP addresses to test.
+
+.PARAMETER Port
+    UDP port to use for NTP queries. Default is 123.
+
+.PARAMETER Timeout
+    Timeout in milliseconds for each NTP query. Default is 3000.
+
+.PARAMETER Count
+    Number of NTP queries to send per server for averaging. Default is 1.
+
+.EXAMPLE
+    Test-NtpServer -Server "pool.ntp.org"
+
+    Server       : pool.ntp.org
+    Status       : Success
+    ServerTime   : 2026-04-14 10:23:45
+    OffsetMs     : -12.34
+    DelayMs      : 25.67
+    Stratum      : 2
+    ReferenceId  : 192.5.41.40
+
+.EXAMPLE
+    Test-NtpServer -Server "0.pool.ntp.org","1.pool.ntp.org","time.windows.com"
+
+.EXAMPLE
+    "pool.ntp.org","time.cloudflare.com" | Test-NtpServer -Count 3
+
+.NOTES
+    NTP uses UDP port 123. Some firewalls may block this traffic.
+    Stratum 1 = directly connected to reference clock (GPS, atomic clock).
+    Stratum 2+ = synchronized from a higher-stratum server.
+    Offset is the difference between server time and local clock (negative = local clock is ahead).
+#>
 function Test-NtpServer {
-    <#
-    .SYNOPSIS
-        Tests one or more NTP servers and returns time synchronization information.
-
-    .DESCRIPTION
-        Queries NTP servers using UDP port 123 and retrieves time synchronization data.
-        Returns the server time, offset from local clock, round-trip delay, and stratum level.
-        Supports testing multiple servers in parallel.
-
-    .PARAMETER Server
-        One or more NTP server hostnames or IP addresses to test.
-
-    .PARAMETER Port
-        UDP port to use for NTP queries. Default is 123.
-
-    .PARAMETER Timeout
-        Timeout in milliseconds for each NTP query. Default is 3000.
-
-    .PARAMETER Count
-        Number of NTP queries to send per server for averaging. Default is 1.
-
-    .EXAMPLE
-        Test-NtpServer -Server "pool.ntp.org"
-
-        Server       : pool.ntp.org
-        Status       : Success
-        ServerTime   : 2026-04-14 10:23:45
-        OffsetMs     : -12.34
-        DelayMs      : 25.67
-        Stratum      : 2
-        ReferenceId  : 192.5.41.40
-
-    .EXAMPLE
-        Test-NtpServer -Server "0.pool.ntp.org","1.pool.ntp.org","time.windows.com"
-
-    .EXAMPLE
-        "pool.ntp.org","time.cloudflare.com" | Test-NtpServer -Count 3
-
-    .NOTES
-        NTP uses UDP port 123. Some firewalls may block this traffic.
-        Stratum 1 = directly connected to reference clock (GPS, atomic clock).
-        Stratum 2+ = synchronized from a higher-stratum server.
-        Offset is the difference between server time and local clock (negative = local clock is ahead).
-    #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]

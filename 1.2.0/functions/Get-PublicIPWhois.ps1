@@ -1,38 +1,38 @@
+<#
+.SYNOPSIS
+    Retrieves public IP address information and WHOIS-like details from multiple providers.
+
+.DESCRIPTION
+    The Get-PublicIPWhois function queries one or more public IP information providers (ip-api.com, ipapi.co, ipinfo.io)
+    for details about a specified IP address. If no provider is specified, it queries all providers and merges the results,
+    deduplicating fields and preferring the first non-null value found.
+
+.PARAMETER IpAddress
+    The public IP address to query. If omitted, your own public IP will be used.
+
+.PARAMETER Provider
+    The provider to query. Valid values are 'ip-api.com', 'ipapi.co', and 'ipinfo.io'.
+    If omitted, all providers are queried and results are merged.
+
+.EXAMPLE
+    Get-PublicIPWhois -IpAddress 8.8.8.8 -Provider ipinfo.io
+
+    Retrieves information about 8.8.8.8 from ipinfo.io.
+
+.EXAMPLE
+    Get-PublicIPWhois -IpAddress 8.8.8.8
+
+    Retrieves information about 8.8.8.8 from all providers and merges the results.
+
+.EXAMPLE
+    Get-PublicIPWhois
+
+    Retrieves information about your own public IP from all providers and merges the results.
+
+.NOTES
+    Merged results may contain fields from all providers, with duplicate fields merged and the first non-null value used.
+#>
 function Get-PublicIPWhois {
-    <#
-    .SYNOPSIS
-        Retrieves public IP address information and WHOIS-like details from multiple providers.
-
-    .DESCRIPTION
-        The Get-PublicIPWhois function queries one or more public IP information providers (ip-api.com, ipapi.co, ipinfo.io)
-        for details about a specified IP address. If no provider is specified, it queries all providers and merges the results,
-        deduplicating fields and preferring the first non-null value found.
-
-    .PARAMETER IpAddress
-        The public IP address to query. If omitted, your own public IP will be used.
-
-    .PARAMETER Provider
-        The provider to query. Valid values are 'ip-api.com', 'ipapi.co', and 'ipinfo.io'.
-        If omitted, all providers are queried and results are merged.
-
-    .EXAMPLE
-        Get-PublicIPWhois -IpAddress 8.8.8.8 -Provider ipinfo.io
-
-        Retrieves information about 8.8.8.8 from ipinfo.io.
-
-    .EXAMPLE
-        Get-PublicIPWhois -IpAddress 8.8.8.8
-
-        Retrieves information about 8.8.8.8 from all providers and merges the results.
-
-    .EXAMPLE
-        Get-PublicIPWhois
-
-        Retrieves information about your own public IP from all providers and merges the results.
-
-    .NOTES
-        Merged results may contain fields from all providers, with duplicate fields merged and the first non-null value used.
-    #>
     [CmdletBinding()]
     param (
         [string]$IpAddress,

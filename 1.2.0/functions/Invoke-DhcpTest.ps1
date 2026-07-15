@@ -1,156 +1,156 @@
 #Requires -Version 5.1
+<#
+.SYNOPSIS
+    Sends DHCP DISCOVER (and optionally REQUEST) packets to test DHCP servers, without dhcptest.exe.
+
+.DESCRIPTION
+    Implements RFC 2131/2132 DHCP DISCOVER/OFFER and optional REQUEST/ACK exchanges over
+    System.Net.Sockets.UdpClient. Supports spoofing the client MAC address (chaddr), injecting
+    arbitrary DHCP options, requesting specific options back from the server (option 55), and
+    targeting either a broadcast segment or a specific server/relay IP.
+
+    By default only DISCOVER/OFFER is performed — this is read-only and never causes a server to
+    commit a lease. The REQUEST/ACK phase (which can cause the server to reserve/commit the
+    offered address) is opt-in via -SendRequest and is gated by ShouldProcess. This function never
+    binds the resulting address to a local network adapter or changes OS routing/interface
+    configuration — it only sends packets and returns a result object.
+
+.PARAMETER ServerAddress
+    DHCP server or relay IP to send to. Default '255.255.255.255' (broadcast).
+
+.PARAMETER ServerPort
+    UDP port on the DHCP server. Default: 67.
+
+.PARAMETER ClientPort
+    Local UDP port to bind. Must be 68 to receive the server's reply (servers always reply to
+    port 68). Default: 68.
+
+.PARAMETER ClientMac
+    Spoofed client MAC address (chaddr), any of xx:xx:xx:xx:xx:xx, xx-xx-xx-xx-xx-xx, or Cisco
+    xxxx.xxxx.xxxx format. If omitted, a random locally-administered MAC is generated.
+
+.PARAMETER Bind
+    Local IP address to bind the UDP socket to, for multi-NIC/VLAN hosts. Default: any address.
+
+.PARAMETER RelayAgentIPAddress
+    Sets the BOOTP 'giaddr' field, simulating a relay agent for the given subnet so the server can
+    select a scope other than the one matching this host's own network position. Per RFC 2131 §4.1,
+    when giaddr is non-zero the server sends its reply to giaddr's address on port 67 (the DHCP
+    server port), not to the client's port 68. To actually receive that reply you must also pass
+    -Bind and -ClientPort 67 with the same address as -RelayAgentIPAddress, and that address must
+    be one this host can genuinely receive traffic on (e.g. a real secondary IP/alias on the
+    target subnet). Otherwise the server does reply, but never to us, and the exchange times out.
+    Default: 0.0.0.0 (no relay simulation).
+
+.PARAMETER Hostname
+    Convenience for DHCP option 12 (Host Name).
+
+.PARAMETER VendorClassIdentifier
+    Convenience for DHCP option 60 (Vendor Class Identifier).
+
+.PARAMETER ClientIdentifier
+    Convenience for DHCP option 61 (Client Identifier), sent as an ASCII string value.
+
+.PARAMETER CircuitId
+    Convenience for DHCP option 82 (Relay Agent Information) sub-option 1, Agent Circuit ID.
+    Many switches with DHCP snooping/relay enabled insert this (and RemoteId) into every real
+    client's DISCOVER, and some DHCP servers use it to select the subnet/pool within a shared
+    network — a spoofed packet without it may land in a different, possibly exhausted, pool even
+    with a correct -RelayAgentIPAddress. Encoded per -CircuitIdType (default ASCII String); use
+    'HexString' if your network expects the vendor-specific binary format a real switch sends
+    (check with your network team, e.g. by comparing to a real relayed packet capture).
+
+.PARAMETER CircuitIdType
+    Encoding for -CircuitId: 'String' (ASCII, default) or 'HexString' (raw bytes from hex digits).
+
+.PARAMETER RemoteId
+    Convenience for DHCP option 82 (Relay Agent Information) sub-option 2, Agent Remote ID —
+    typically the relaying switch's own identifier (e.g. its MAC address). See -CircuitId.
+
+.PARAMETER RemoteIdType
+    Encoding for -RemoteId: 'String' (ASCII, default) or 'HexString' (raw bytes from hex digits).
+
+.PARAMETER RequestOptions
+    DHCP option codes (0-255) to request via option 55 (Parameter Request List).
+    Default: 1,3,6,15,51,54,58,59 (subnet mask, router, DNS, domain name, lease time, server id,
+    renewal/rebinding time).
+
+.PARAMETER Option
+    Additional raw DHCP options to inject, as an array of hashtables with keys Code, Type, Value.
+    Type must be one of Byte, UInt16, UInt32, String, IPAddress, HexString, ByteArray.
+    Example: -Option @{Code=43;Type='HexString';Value='0102FF'}, @{Code=125;Type='IPAddress';Value='10.0.0.1'}
+
+.PARAMETER TransactionId
+    Transaction ID (xid) to use. Default: a randomly generated value.
+
+.PARAMETER SendRequest
+    After receiving an OFFER, send a REQUEST for the offered address and wait for ACK/NAK.
+    This is the only phase that can cause a server to actually commit/reserve a lease, so it is
+    gated by ShouldProcess (-WhatIf/-Confirm).
+
+.PARAMETER RequestedIPAddress
+    Requested address (option 50). If given, it is included as a hint in the DISCOVER packet and
+    used as the requested address in the REQUEST packet (defaulting there to the offered address
+    if this override isn't also intended for REQUEST). Note most DHCP servers do not select a
+    scope based on this hint — see -RelayAgentIPAddress for actual scope selection.
+
+.PARAMETER TimeoutSeconds
+    Per-attempt wait for a reply, in seconds. Default: 5.
+
+.PARAMETER Retries
+    Number of send attempts before giving up on a phase. Default: 3.
+
+.PARAMETER LogActivity
+    Also write DISCOVER/OFFER/REQUEST/ACK events via Write-Log.
+
+.EXAMPLE
+    Invoke-DhcpTest -Verbose
+
+    Status           : OfferReceived
+    OfferedAddress   : 192.168.1.87
+    ServerIdentifier : 192.168.1.1
+    LeaseTimeSeconds : 86400
+
+.EXAMPLE
+    Invoke-DhcpTest -ClientMac '02:11:22:33:44:55' -Hostname 'dhcptest-probe' -RequestOptions 1,3,6,15,51
+
+.EXAMPLE
+    Invoke-DhcpTest -SendRequest -Confirm:$false -Verbose
+
+    Completes the full DISCOVER/OFFER/REQUEST/ACK handshake — will consume a real lease from the
+    server's pool if it ACKs.
+
+.EXAMPLE
+    Invoke-DhcpTest -ServerAddress 10.0.0.5 -Bind 10.0.1.20
+
+    Unicasts the DISCOVER to a specific DHCP server/relay from a specific local interface.
+
+.EXAMPLE
+    Invoke-DhcpTest -ServerAddress 172.31.3.174 -RelayAgentIPAddress 10.55.2.1 -Bind 10.55.2.1 -ClientPort 67
+
+    Simulates a relay agent for the 10.55.2.0/24 scope so the server offers from that subnet
+    instead of the one matching this host's own address. Requires 10.55.2.1 to be a real,
+    reachable address on this host (e.g. a secondary IP/alias) and -ClientPort 67, since replies
+    to a non-zero giaddr go to port 67, not 68. See -RelayAgentIPAddress notes.
+
+.EXAMPLE
+    Invoke-DhcpTest -ServerAddress 172.31.3.179 -RelayAgentIPAddress 10.55.2.1 -Bind 10.55.2.1 -ClientPort 67 -CircuitIdType HexString -CircuitId '0004' -RemoteIdType HexString -RemoteId '0006AABBCCDDEEFF'
+
+    Simulates a relay agent that also inserts Option 82 sub-options, for DHCP servers that use
+    circuit-id/remote-id (not just giaddr) to select the pool within a shared network.
+
+.NOTES
+    The BOOTP broadcast flag (0x8000) is always set in outgoing packets. With ciaddr=0 and
+    giaddr=0 and no address bound to a real interface, an RFC-compliant server always replies via
+    broadcast — there is no scenario in this tool where a unicast reply back to us would work,
+    since we don't own the offered address at the network layer.
+
+    Binding local UDP port 68 usually conflicts with the Windows DHCP Client service, which holds
+    that port on any DHCP-enabled adapter. This function sets SO_REUSEADDR so it can coexist with
+    it; if binding still fails, run PowerShell elevated and/or temporarily stop the service:
+    Stop-Service Dhcp -Force (Start-Service Dhcp afterward).
+#>
 function Invoke-DhcpTest {
-    <#
-    .SYNOPSIS
-        Sends DHCP DISCOVER (and optionally REQUEST) packets to test DHCP servers, without dhcptest.exe.
-
-    .DESCRIPTION
-        Implements RFC 2131/2132 DHCP DISCOVER/OFFER and optional REQUEST/ACK exchanges over
-        System.Net.Sockets.UdpClient. Supports spoofing the client MAC address (chaddr), injecting
-        arbitrary DHCP options, requesting specific options back from the server (option 55), and
-        targeting either a broadcast segment or a specific server/relay IP.
-
-        By default only DISCOVER/OFFER is performed — this is read-only and never causes a server to
-        commit a lease. The REQUEST/ACK phase (which can cause the server to reserve/commit the
-        offered address) is opt-in via -SendRequest and is gated by ShouldProcess. This function never
-        binds the resulting address to a local network adapter or changes OS routing/interface
-        configuration — it only sends packets and returns a result object.
-
-    .PARAMETER ServerAddress
-        DHCP server or relay IP to send to. Default '255.255.255.255' (broadcast).
-
-    .PARAMETER ServerPort
-        UDP port on the DHCP server. Default: 67.
-
-    .PARAMETER ClientPort
-        Local UDP port to bind. Must be 68 to receive the server's reply (servers always reply to
-        port 68). Default: 68.
-
-    .PARAMETER ClientMac
-        Spoofed client MAC address (chaddr), any of xx:xx:xx:xx:xx:xx, xx-xx-xx-xx-xx-xx, or Cisco
-        xxxx.xxxx.xxxx format. If omitted, a random locally-administered MAC is generated.
-
-    .PARAMETER Bind
-        Local IP address to bind the UDP socket to, for multi-NIC/VLAN hosts. Default: any address.
-
-    .PARAMETER RelayAgentIPAddress
-        Sets the BOOTP 'giaddr' field, simulating a relay agent for the given subnet so the server can
-        select a scope other than the one matching this host's own network position. Per RFC 2131 §4.1,
-        when giaddr is non-zero the server sends its reply to giaddr's address on port 67 (the DHCP
-        server port), not to the client's port 68. To actually receive that reply you must also pass
-        -Bind and -ClientPort 67 with the same address as -RelayAgentIPAddress, and that address must
-        be one this host can genuinely receive traffic on (e.g. a real secondary IP/alias on the
-        target subnet). Otherwise the server does reply, but never to us, and the exchange times out.
-        Default: 0.0.0.0 (no relay simulation).
-
-    .PARAMETER Hostname
-        Convenience for DHCP option 12 (Host Name).
-
-    .PARAMETER VendorClassIdentifier
-        Convenience for DHCP option 60 (Vendor Class Identifier).
-
-    .PARAMETER ClientIdentifier
-        Convenience for DHCP option 61 (Client Identifier), sent as an ASCII string value.
-
-    .PARAMETER CircuitId
-        Convenience for DHCP option 82 (Relay Agent Information) sub-option 1, Agent Circuit ID.
-        Many switches with DHCP snooping/relay enabled insert this (and RemoteId) into every real
-        client's DISCOVER, and some DHCP servers use it to select the subnet/pool within a shared
-        network — a spoofed packet without it may land in a different, possibly exhausted, pool even
-        with a correct -RelayAgentIPAddress. Encoded per -CircuitIdType (default ASCII String); use
-        'HexString' if your network expects the vendor-specific binary format a real switch sends
-        (check with your network team, e.g. by comparing to a real relayed packet capture).
-
-    .PARAMETER CircuitIdType
-        Encoding for -CircuitId: 'String' (ASCII, default) or 'HexString' (raw bytes from hex digits).
-
-    .PARAMETER RemoteId
-        Convenience for DHCP option 82 (Relay Agent Information) sub-option 2, Agent Remote ID —
-        typically the relaying switch's own identifier (e.g. its MAC address). See -CircuitId.
-
-    .PARAMETER RemoteIdType
-        Encoding for -RemoteId: 'String' (ASCII, default) or 'HexString' (raw bytes from hex digits).
-
-    .PARAMETER RequestOptions
-        DHCP option codes (0-255) to request via option 55 (Parameter Request List).
-        Default: 1,3,6,15,51,54,58,59 (subnet mask, router, DNS, domain name, lease time, server id,
-        renewal/rebinding time).
-
-    .PARAMETER Option
-        Additional raw DHCP options to inject, as an array of hashtables with keys Code, Type, Value.
-        Type must be one of Byte, UInt16, UInt32, String, IPAddress, HexString, ByteArray.
-        Example: -Option @{Code=43;Type='HexString';Value='0102FF'}, @{Code=125;Type='IPAddress';Value='10.0.0.1'}
-
-    .PARAMETER TransactionId
-        Transaction ID (xid) to use. Default: a randomly generated value.
-
-    .PARAMETER SendRequest
-        After receiving an OFFER, send a REQUEST for the offered address and wait for ACK/NAK.
-        This is the only phase that can cause a server to actually commit/reserve a lease, so it is
-        gated by ShouldProcess (-WhatIf/-Confirm).
-
-    .PARAMETER RequestedIPAddress
-        Requested address (option 50). If given, it is included as a hint in the DISCOVER packet and
-        used as the requested address in the REQUEST packet (defaulting there to the offered address
-        if this override isn't also intended for REQUEST). Note most DHCP servers do not select a
-        scope based on this hint — see -RelayAgentIPAddress for actual scope selection.
-
-    .PARAMETER TimeoutSeconds
-        Per-attempt wait for a reply, in seconds. Default: 5.
-
-    .PARAMETER Retries
-        Number of send attempts before giving up on a phase. Default: 3.
-
-    .PARAMETER LogActivity
-        Also write DISCOVER/OFFER/REQUEST/ACK events via Write-Log.
-
-    .EXAMPLE
-        Invoke-DhcpTest -Verbose
-
-        Status           : OfferReceived
-        OfferedAddress   : 192.168.1.87
-        ServerIdentifier : 192.168.1.1
-        LeaseTimeSeconds : 86400
-
-    .EXAMPLE
-        Invoke-DhcpTest -ClientMac '02:11:22:33:44:55' -Hostname 'dhcptest-probe' -RequestOptions 1,3,6,15,51
-
-    .EXAMPLE
-        Invoke-DhcpTest -SendRequest -Confirm:$false -Verbose
-
-        Completes the full DISCOVER/OFFER/REQUEST/ACK handshake — will consume a real lease from the
-        server's pool if it ACKs.
-
-    .EXAMPLE
-        Invoke-DhcpTest -ServerAddress 10.0.0.5 -Bind 10.0.1.20
-
-        Unicasts the DISCOVER to a specific DHCP server/relay from a specific local interface.
-
-    .EXAMPLE
-        Invoke-DhcpTest -ServerAddress 172.31.3.174 -RelayAgentIPAddress 10.55.2.1 -Bind 10.55.2.1 -ClientPort 67
-
-        Simulates a relay agent for the 10.55.2.0/24 scope so the server offers from that subnet
-        instead of the one matching this host's own address. Requires 10.55.2.1 to be a real,
-        reachable address on this host (e.g. a secondary IP/alias) and -ClientPort 67, since replies
-        to a non-zero giaddr go to port 67, not 68. See -RelayAgentIPAddress notes.
-
-    .EXAMPLE
-        Invoke-DhcpTest -ServerAddress 172.31.3.179 -RelayAgentIPAddress 10.55.2.1 -Bind 10.55.2.1 -ClientPort 67 -CircuitIdType HexString -CircuitId '0004' -RemoteIdType HexString -RemoteId '0006AABBCCDDEEFF'
-
-        Simulates a relay agent that also inserts Option 82 sub-options, for DHCP servers that use
-        circuit-id/remote-id (not just giaddr) to select the pool within a shared network.
-
-    .NOTES
-        The BOOTP broadcast flag (0x8000) is always set in outgoing packets. With ciaddr=0 and
-        giaddr=0 and no address bound to a real interface, an RFC-compliant server always replies via
-        broadcast — there is no scenario in this tool where a unicast reply back to us would work,
-        since we don't own the offered address at the network layer.
-
-        Binding local UDP port 68 usually conflicts with the Windows DHCP Client service, which holds
-        that port on any DHCP-enabled adapter. This function sets SO_REUSEADDR so it can coexist with
-        it; if binding still fails, run PowerShell elevated and/or temporarily stop the service:
-        Stop-Service Dhcp -Force (Start-Service Dhcp afterward).
-    #>
     [CmdletBinding(SupportsShouldProcess)]
     [OutputType([PSCustomObject])]
     param(

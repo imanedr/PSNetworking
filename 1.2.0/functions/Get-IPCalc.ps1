@@ -1,78 +1,81 @@
+<#
+.SYNOPSIS
+    Advanced IP subnet calculator that provides detailed network information.
+
+.DESCRIPTION
+    IP Calculator for calculation IP Subnet. Provides comprehensive network information including binary representations, 
+    subnet boundaries, and advanced subnet manipulation methods.
+
+.PARAMETER CIDR
+    Specifies the network in CIDR notation (e.g., "192.168.1.0/24")
+
+.PARAMETER IPAddress
+    Specifies the IP address to analyze
+
+.PARAMETER Mask
+    Specifies the subnet mask (e.g., "255.255.255.0")
+
+.PARAMETER PrefixLength
+    Specifies the network prefix length (0-32)
+
+.PARAMETER WildCard
+    Specifies the wildcard mask
+
+.EXAMPLE
+    Get-IPCalc -CIDR 192.168.0.0/24
+
+    Shows complete subnet information including:
+    IP           : 192.168.0.0
+    Mask         : 255.255.255.0
+    PrefixLength : 24
+    WildCard     : 0.0.0.255
+    IPcount      : 256
+    Subnet       : 192.168.0.0
+    Broadcast    : 192.168.0.255
+    CIDR         : 192.168.0.0/24
+    ToDecimal    : 3232235520
+    IPBin        : 11000000.10101000.00000000.00000000
+    MaskBin      : 11111111.11111111.11111111.00000000
+    SubnetBin    : 11000000.10101000.00000000.00000000
+    BroadcastBin : 11000000.10101000.00000000.11111111
+
+.EXAMPLE
+    Get-IPCalc -IPAddress 192.168.3.0 -PrefixLength 23
+
+    Demonstrates calculation with IP address and prefix length, showing a larger subnet (512 IPs)
+
+.EXAMPLE
+    (Get-IPCalc 192.168.99.58/30).GetIPArray()
+    
+    Returns all IP addresses in the specified subnet:
+    192.168.99.56
+    192.168.99.57
+    192.168.99.58
+    192.168.99.59
+
+.EXAMPLE
+    (Get-IPCalc 192.168.99.56/28).Compare('192.168.99.50')
+    
+    Demonstrates the Compare method to check if an IP belongs to a subnet
+
+.EXAMPLE
+    (Get-IPCalc 192.168.0.0/25).Overlaps('192.168.0.0/27')
+    
+    Shows how to check for overlapping subnets
+
+.NOTES
+    Advanced Methods Available:
+    - Add(): Add IP addresses within the subnet
+    - Compare(): Compare IP addresses within the subnet
+    - Overlaps(): Check for overlapping subnets
+    - GetIParray(): Get all IP addresses in the range
+    - isLocal(): Check if IP is on local network
+    - GetLocalRoute(): Get routing information for specific IPs
+#>
+
+
 Function Get-IPCalc {
-    <#
-    .SYNOPSIS
-        Advanced IP subnet calculator that provides detailed network information.
-
-    .DESCRIPTION
-        IP Calculator for calculation IP Subnet. Provides comprehensive network information including binary representations,
-        subnet boundaries, and advanced subnet manipulation methods.
-
-    .PARAMETER CIDR
-        Specifies the network in CIDR notation (e.g., "192.168.1.0/24")
-
-    .PARAMETER IPAddress
-        Specifies the IP address to analyze
-
-    .PARAMETER Mask
-        Specifies the subnet mask (e.g., "255.255.255.0")
-
-    .PARAMETER PrefixLength
-        Specifies the network prefix length (0-32)
-
-    .PARAMETER WildCard
-        Specifies the wildcard mask
-
-    .EXAMPLE
-        Get-IPCalc -CIDR 192.168.0.0/24
-
-        Shows complete subnet information including:
-        IP           : 192.168.0.0
-        Mask         : 255.255.255.0
-        PrefixLength : 24
-        WildCard     : 0.0.0.255
-        IPcount      : 256
-        Subnet       : 192.168.0.0
-        Broadcast    : 192.168.0.255
-        CIDR         : 192.168.0.0/24
-        ToDecimal    : 3232235520
-        IPBin        : 11000000.10101000.00000000.00000000
-        MaskBin      : 11111111.11111111.11111111.00000000
-        SubnetBin    : 11000000.10101000.00000000.00000000
-        BroadcastBin : 11000000.10101000.00000000.11111111
-
-    .EXAMPLE
-        Get-IPCalc -IPAddress 192.168.3.0 -PrefixLength 23
-
-        Demonstrates calculation with IP address and prefix length, showing a larger subnet (512 IPs)
-
-    .EXAMPLE
-        (Get-IPCalc 192.168.99.58/30).GetIPArray()
-
-        Returns all IP addresses in the specified subnet:
-        192.168.99.56
-        192.168.99.57
-        192.168.99.58
-        192.168.99.59
-
-    .EXAMPLE
-        (Get-IPCalc 192.168.99.56/28).Compare('192.168.99.50')
-
-        Demonstrates the Compare method to check if an IP belongs to a subnet
-
-    .EXAMPLE
-        (Get-IPCalc 192.168.0.0/25).Overlaps('192.168.0.0/27')
-
-        Shows how to check for overlapping subnets
-
-    .NOTES
-        Advanced Methods Available:
-        - Add(): Add IP addresses within the subnet
-        - Compare(): Compare IP addresses within the subnet
-        - Overlaps(): Check for overlapping subnets
-        - GetIParray(): Get all IP addresses in the range
-        - isLocal(): Check if IP is on local network
-        - GetLocalRoute(): Get routing information for specific IPs
-    #>
+    
     [CmdletBinding(DefaultParameterSetName = 'CIDR')]
     param(
         [Parameter(Mandatory = $true, ParameterSetName = 'CIDR', ValueFromPipelineByPropertyName = $true, Position = 0)]
